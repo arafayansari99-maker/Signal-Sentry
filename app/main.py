@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -40,11 +41,14 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    start_scheduler()
+    should_start_scheduler = settings.background_queue_enabled and not os.getenv("VERCEL")
+    if should_start_scheduler:
+        start_scheduler()
     try:
         yield
     finally:
-        stop_scheduler()
+        if should_start_scheduler:
+            stop_scheduler()
 
 
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)

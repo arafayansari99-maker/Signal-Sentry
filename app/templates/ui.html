@@ -1,184 +1,184 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SignalSentry AI dashboard for competitive intelligence monitoring." />
-    <title>SignalSentry AI</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/ui-static/ui.css" />
-  </head>
-  <body>
-    <div class="page-shell">
-      <div class="bg-orb orb-one"></div>
-      <div class="bg-orb orb-two"></div>
-      <div class="bg-grid"></div>
+{% extends "base.html" %}
 
-      <header class="topbar">
-        <div class="brand-wrap">
-          <div class="brand-mark" aria-label="SignalSentry logo">
-            <span class="mark-core"></span>
-            <span class="mark-wave wave-1"></span>
-            <span class="mark-wave wave-2"></span>
-          </div>
-          <div class="brand-copy">
-            <div class="brand-name">SignalSentry</div>
-            <div class="brand-tag">AI competitive intelligence</div>
-          </div>
-        </div>
+{% block title %}SignalSentry AI{% endblock %}
+{% block meta_description %}SignalSentry AI dashboard for competitive intelligence monitoring.{% endblock %}
 
-        <nav class="nav">
-          <a href="#overview">Overview</a>
-          <a href="#watchlist">Watchlist</a>
-          <a href="#digest">Digest</a>
-        </nav>
+{% block head_extra %}
+<link rel="stylesheet" href="/ui-static/ui.css" />
+{% endblock %}
 
-        <button class="ghost-btn">Launch dashboard</button>
-      </header>
+{% block background_decor %}
+<div class="bg-orb orb-one"></div>
+<div class="bg-orb orb-two"></div>
+<div class="bg-grid"></div>
+{% endblock %}
 
-      <main class="main">
-        <section class="hero glass-panel" id="overview">
-          <div class="hero-copy">
-            <div class="eyebrow">Live market signal engine</div>
-            <h1>Track pricing shifts before your competitors do.</h1>
-            <p>
-              SignalSentry continuously watches public competitor pages, detects meaningful changes,
-              prioritizes pricing alerts, and packages the signal into daily digest summaries for sales and product teams.
-            </p>
+{% block brand %}
+<div class="brand-wrap">
+  <div class="brand-mark" aria-label="SignalSentry logo">
+    <span class="mark-core"></span>
+    <span class="mark-wave wave-1"></span>
+    <span class="mark-wave wave-2"></span>
+  </div>
+  <div class="brand-copy">
+    <div class="brand-name">SignalSentry</div>
+    <div class="brand-tag">AI competitive intelligence</div>
+  </div>
+</div>
+{% endblock %}
 
-            <div class="hero-actions">
-              <button class="primary-btn">Start monitoring</button>
-              <button class="secondary-btn">View API</button>
-            </div>
+{% block nav_links %}
+<a href="#overview">Overview</a>
+<a href="#watchlist">Watchlist</a>
+<a href="#digest">Digest</a>
+{% endblock %}
 
-            <div class="status-row">
-              <div class="status-badge">
-                <span class="dot live"></span>
-                Scheduler live
-              </div>
-              <div class="status-badge muted">
-                <span class="dot pulse"></span>
-                Daily digest: 09:00 UTC
-              </div>
-            </div>
-          </div>
+{% block top_actions %}
+<button class="ghost-btn">Launch dashboard</button>
+{% endblock %}
 
-          <div class="hero-visual">
-            <div class="signal-card">
-              <div class="signal-header">
-                <span class="label">Live signal</span>
-                <span class="pill success">+12.4%</span>
-              </div>
+{% block content %}
+<section class="hero glass-panel" id="overview">
+  <div class="hero-copy">
+    <div class="eyebrow">Live market signal engine</div>
+    <h1>Track pricing shifts before your competitors do.</h1>
+    <p>
+      SignalSentry continuously watches public competitor pages, detects meaningful changes,
+      prioritizes pricing alerts, and packages the signal into daily digest summaries for sales and product teams.
+    </p>
 
-              <div class="signal-chart">
-                <span style="--h: 30%"></span>
-                <span style="--h: 42%"></span>
-                <span style="--h: 54%"></span>
-                <span style="--h: 64%"></span>
-                <span style="--h: 72%"></span>
-                <span style="--h: 90%"></span>
-                <span style="--h: 76%"></span>
-                <span style="--h: 84%"></span>
-                <span style="--h: 96%"></span>
-                <span style="--h: 100%"></span>
-              </div>
-
-              <div class="signal-meta">
-                <div>
-                  <small>High priority</small>
-                  <strong>Pricing drift</strong>
-                </div>
-                <div>
-                  <small>Confidence</small>
-                  <strong>91%</strong>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="stats-grid">
-          <article class="stat-card glass-panel fade-up delay-1">
-            <div class="stat-kicker">Monitored</div>
-            <div class="stat-value" id="stat-competitors">--</div>
-            <div class="stat-note">active competitors</div>
-          </article>
-
-          <article class="stat-card glass-panel fade-up delay-2">
-            <div class="stat-kicker">Urgent alerts</div>
-            <div class="stat-value" id="stat-alerts">--</div>
-            <div class="stat-note">pricing changes</div>
-          </article>
-
-          <article class="stat-card glass-panel fade-up delay-3">
-            <div class="stat-kicker">Digest health</div>
-            <div class="stat-value" id="stat-digest">--</div>
-            <div class="stat-note">items this cycle</div>
-          </article>
-
-          <article class="stat-card glass-panel fade-up delay-4">
-            <div class="stat-kicker">Scheduler</div>
-            <div class="stat-value" id="stat-scheduler">--</div>
-            <div class="stat-note">background status</div>
-          </article>
-        </section>
-
-        <section class="content-grid">
-          <div class="panel glass-panel" id="watchlist">
-            <div class="panel-header">
-              <div>
-                <div class="panel-eyebrow">Watchlist</div>
-                <h2>Tracked competitors</h2>
-              </div>
-              <button class="tiny-btn">Add competitor</button>
-            </div>
-
-            <div class="list skeleton-list" id="competitor-list">
-              <div class="skeleton-row"></div>
-              <div class="skeleton-row"></div>
-              <div class="skeleton-row"></div>
-            </div>
-          </div>
-
-          <div class="panel glass-panel" id="digest">
-            <div class="panel-header">
-              <div>
-                <div class="panel-eyebrow">Digest</div>
-                <h2>Weekly summary</h2>
-              </div>
-            </div>
-
-            <div id="digest-list" class="digest-list skeleton-list">
-              <div class="skeleton-block"></div>
-              <div class="skeleton-block"></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="feature-strip">
-          <article class="feature-item glass-panel fade-up delay-1">
-            <div class="feature-icon">01</div>
-            <h3>Discovery</h3>
-            <p>Find pricing, product, and hiring pages automatically from competitor domains.</p>
-          </article>
-
-          <article class="feature-item glass-panel fade-up delay-2">
-            <div class="feature-icon">02</div>
-            <h3>Diffing</h3>
-            <p>Compare snapshots, filter noise, and isolate material changes worth elevating.</p>
-          </article>
-
-          <article class="feature-item glass-panel fade-up delay-3">
-            <div class="feature-icon">03</div>
-            <h3>Signal ranking</h3>
-            <p>Prioritize pricing moves and highlight where change actually matters for your team.</p>
-          </article>
-        </section>
-      </main>
+    <div class="hero-actions">
+      <button class="primary-btn">Start monitoring</button>
+      <button class="secondary-btn">View API</button>
     </div>
 
-    <script src="/ui-static/ui.js"></script>
-  </body>
-</html>
+    <div class="status-row">
+      <div class="status-badge">
+        <span class="dot live"></span>
+        Scheduler live
+      </div>
+      <div class="status-badge muted">
+        <span class="dot pulse"></span>
+        Daily digest: 09:00 UTC
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="signal-card">
+      <div class="signal-header">
+        <span class="label">Live signal</span>
+        <span class="pill success">+12.4%</span>
+      </div>
+
+      <div class="signal-chart">
+        <span style="--h: 30%"></span>
+        <span style="--h: 42%"></span>
+        <span style="--h: 54%"></span>
+        <span style="--h: 64%"></span>
+        <span style="--h: 72%"></span>
+        <span style="--h: 58%"></span>
+        <span style="--h: 80%"></span>
+        <span style="--h: 90%"></span>
+        <span style="--h: 76%"></span>
+        <span style="--h: 84%"></span>
+        <span style="--h: 96%"></span>
+        <span style="--h: 100%"></span>
+      </div>
+
+      <div class="signal-meta">
+        <div>
+          <small>High priority</small>
+          <strong>Pricing drift</strong>
+        </div>
+        <div>
+          <small>Confidence</small>
+          <strong>91%</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card glass-panel fade-up delay-1">
+    <div class="stat-kicker">Monitored</div>
+    <div class="stat-value" id="stat-competitors">--</div>
+    <div class="stat-note">active competitors</div>
+  </article>
+
+  <article class="stat-card glass-panel fade-up delay-2">
+    <div class="stat-kicker">Urgent alerts</div>
+    <div class="stat-value" id="stat-alerts">--</div>
+    <div class="stat-note">pricing changes</div>
+  </article>
+
+  <article class="stat-card glass-panel fade-up delay-3">
+    <div class="stat-kicker">Digest health</div>
+    <div class="stat-value" id="stat-digest">--</div>
+    <div class="stat-note">items this cycle</div>
+  </article>
+
+  <article class="stat-card glass-panel fade-up delay-4">
+    <div class="stat-kicker">Scheduler</div>
+    <div class="stat-value" id="stat-scheduler">--</div>
+    <div class="stat-note">background status</div>
+  </article>
+</section>
+
+<section class="content-grid">
+  <div class="panel glass-panel" id="watchlist">
+    <div class="panel-header">
+      <div>
+        <div class="panel-eyebrow">Watchlist</div>
+        <h2>Tracked competitors</h2>
+      </div>
+      <button class="tiny-btn">Add competitor</button>
+    </div>
+
+    <div class="list skeleton-list" id="competitor-list">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  </div>
+
+  <div class="panel glass-panel" id="digest">
+    <div class="panel-header">
+      <div>
+        <div class="panel-eyebrow">Digest</div>
+        <h2>Weekly summary</h2>
+      </div>
+    </div>
+
+    <div id="digest-list" class="digest-list skeleton-list">
+      <div class="skeleton-block"></div>
+      <div class="skeleton-block"></div>
+    </div>
+  </div>
+</section>
+
+<section class="feature-strip">
+  <article class="feature-item glass-panel fade-up delay-1">
+    <div class="feature-icon">01</div>
+    <h3>Discovery</h3>
+    <p>Find pricing, product, and hiring pages automatically from competitor domains.</p>
+  </article>
+
+  <article class="feature-item glass-panel fade-up delay-2">
+    <div class="feature-icon">02</div>
+    <h3>Diffing</h3>
+    <p>Compare snapshots, filter noise, and isolate material changes worth elevating.</p>
+  </article>
+
+  <article class="feature-item glass-panel fade-up delay-3">
+    <div class="feature-icon">03</div>
+    <h3>Signal ranking</h3>
+    <p>Prioritize pricing moves and highlight where change actually matters for your team.</p>
+  </article>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/ui-static/ui.js"></script>
+{% endblock %}

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" {% block html_attributes %}{% endblock %}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="{% block meta_description %}SignalSentry is an AI-powered competitive intelligence platform for pricing and market monitoring.{% endblock %}" />
+    <title>{% block title %}SignalSentry{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/ui-static/base.css" />
+    {% block head_extra %}{% endblock %}
+  </head>
+  <body>
+    {% block body_start %}{% endblock %}
+    <div id="top" class="{% block shell_class %}page-shell{% endblock %}">
+      {% block background_decor %}{% endblock %}
+
+      <header class="topbar">
+        {% block brand %}
+        <a href="/" class="brand" aria-label="SignalSentry home">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div class="brand-name">SignalSentry</div>
+        </a>
+        {% endblock %}
+
+        <button class="mobile-nav-toggle" type="button" aria-controls="site-nav" aria-expanded="false" aria-label="Toggle navigation">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <div class="mobile-nav-panel" id="site-nav">
+          <nav class="nav" aria-label="Main navigation">
+            {% block nav_links %}
+            <a href="/">Home</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/docs">API docs</a>
+            {% endblock %}
+          </nav>
+
+          <div class="mobile-nav-actions"></div>
+        </div>
+
+        <div class="top-actions">
+          {% block top_actions %}
+          <div class="nav-cluster">
+            <a href="/login" class="profile-badge" data-profile-pill>
+              <span class="profile-avatar">C</span>
+              <span class="profile-text">Company</span>
+            </a>
+            <a href="/login" class="nav-cta">Company login</a>
+          </div>
+          {% endblock %}
+        </div>
+      </header>
+
+      <main>
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    {% block extra_body %}{% endblock %}
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const toggle = document.querySelector('.mobile-nav-toggle');
+        const panel = document.querySelector('.mobile-nav-panel');
+        const actionHost = document.querySelector('.top-actions');
+        const mobileActions = document.querySelector('.mobile-nav-actions');
+        const navLinks = document.querySelectorAll('.mobile-nav-panel .nav a');
+        const profilePills = document.querySelectorAll('[data-profile-pill]');
+
+        const renderProfilePill = () => {
+          const storedUser = localStorage.getItem('signal_sentry_user');
+          const token = localStorage.getItem('signal_sentry_token');
+          const pills = document.querySelectorAll('[data-profile-pill]');
+
+          const safeDecode = (jwt) => {
+            if (!jwt || !jwt.includes('.')) return null;
+            try {
+              const payload = jwt.split('.')[1];
+              const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+              const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+              return JSON.parse(atob(padded));
+            } catch {
+              return null;
+            }
+          };
+
+          const decoded = token ? safeDecode(token) : null;
+          const user = storedUser ? JSON.parse(storedUser) : null;
+
+          pills.forEach((pill) => {
+            const avatar = pill.querySelector('.profile-avatar');
+            const text = pill.querySelector('.profile-text');
+            const companyName = user?.company_name || decoded?.company_name || 'Company';
+            const initial = (companyName || 'C').trim().charAt(0).toUpperCase();
+
+            if (avatar) avatar.textContent = initial;
+            if (text) text.textContent = companyName;
+
+            pill.setAttribute('href', '/dashboard');
+            pill.setAttribute('title', 'Open company workspace');
+            pill.classList.toggle('is-authenticated', Boolean(token));
+          });
+        };
+
+        renderProfilePill();
+
+        if (actionHost && mobileActions && !mobileActions.innerHTML.trim()) {
+          mobileActions.innerHTML = actionHost.innerHTML;
+          renderProfilePill();
+        }
+
+        if (!toggle || !panel) return;
+
+        const closeMenu = () => {
+          panel.classList.remove('is-open');
+          toggle.classList.remove('is-open');
+          toggle.setAttribute('aria-expanded', 'false');
+        };
+
+        toggle.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const isOpen = panel.classList.toggle('is-open');
+          toggle.classList.toggle('is-open', isOpen);
+          toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+
+        navLinks.forEach((link) => {
+          link.addEventListener('click', (event) => {
+            event.stopPropagation();
+            closeMenu();
+          });
+        });
+
+        document.addEventListener('click', (event) => {
+          const target = event.target;
+          if (target instanceof Node && !panel.contains(target) && !toggle.contains(target)) {
+            closeMenu();
+          }
+        });
+      });
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

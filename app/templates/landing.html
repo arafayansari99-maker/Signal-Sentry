@@ -1,664 +1,1268 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SignalSentry is an AI-powered competitive intelligence dashboard for pricing and market monitoring." />
-    <title>SignalSentry | Competitive Intelligence</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-    <style>
-      :root {
-        --bg: #07111e;
-        --bg-soft: #0f1d2c;
-        --panel: rgba(13, 22, 34, 0.78);
-        --line: rgba(148, 163, 184, 0.14);
-        --text: #edf7ff;
-        --muted: #a7bed6;
-        --primary: #73e5ff;
-        --secondary: #7c87ff;
-        --success: #8df0ba;
-        --shadow: 0 26px 70px rgba(4, 10, 17, 0.5);
-      }
+{% extends "base.html" %}
 
-      * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: "Inter", sans-serif;
-        background: radial-gradient(circle at top, #12314d 0%, #07111e 30%, #030b13 100%);
-        color: var(--text);
-      }
+{% block title %}SignalSentry | Competitive Intelligence{% endblock %}
+{% block meta_description %}SignalSentry is an AI-powered competitive intelligence dashboard for pricing and market monitoring.{% endblock %}
 
-      a { color: inherit; text-decoration: none; }
-      button { font: inherit; }
+{% block head_extra %}
+<style>
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+    scroll-padding-top: 110px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: #040d14;
+  }
 
-      .shell {
-        position: relative;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 22px 20px 80px;
-        overflow: hidden;
-      }
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 
-      .bg-orb {
-        position: absolute;
-        width: 420px;
-        height: 420px;
-        border-radius: 50%;
-        filter: blur(70px);
-        opacity: 0.35;
-        pointer-events: none;
-      }
+  body {
+    background:
+      radial-gradient(circle at 12% 10%, rgba(95, 224, 255, 0.18), transparent 20%),
+      radial-gradient(circle at 78% 18%, rgba(141, 139, 255, 0.22), transparent 24%),
+      radial-gradient(circle at 50% 100%, rgba(72, 194, 194, 0.12), transparent 28%),
+      linear-gradient(180deg, #081924 0%, #050d14 100%);
+    background-attachment: fixed;
+    overflow-x: hidden;
+  }
 
-      .orb-one { background: rgba(124, 135, 255, 0.44); top: -120px; right: 0; }
-      .orb-two { background: rgba(115, 229, 255, 0.28); left: 4%; top: 260px; }
-      .grid {
-        position: absolute;
-        inset: 0;
-        background-image: linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
-        background-size: 32px 32px;
-        mask-image: radial-gradient(circle at center, black 50%, transparent 100%);
-        pointer-events: none;
-      }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+    mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+    animation: gridDrift 18s linear infinite;
+    z-index: -1;
+  }
 
-      .topbar {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        padding: 12px 18px;
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: rgba(10, 17, 27, 0.55);
-        backdrop-filter: blur(45px);
-      }
+  @keyframes gridDrift {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(0, 10px, 0) scale(1.02); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
 
-      .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
+  .shell {
+    position: relative;
+    width: min(100%, 1280px);
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 22px 20px 80px;
+    overflow: hidden;
+    background: linear-gradient(125deg, rgba(9, 20, 29, 0.96), rgba(12, 21, 32, 0.92) 50%, rgba(8, 15, 23, 0.97));
+    border: 1px solid rgba(146, 170, 194, 0.14);
+    border-radius: 28px;
+    box-shadow: 0 40px 90px rgba(2, 7, 12, 0.58);
+  }
 
-      .brand-mark {
-        position: relative;
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, rgba(115, 229, 255, 0.3), rgba(124, 135, 255, 0.7));
-        border: 1px solid rgba(148, 163, 184, 0.22);
-      }
+  .bg-orb {
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.35;
+    pointer-events: none;
+  }
 
-      .brand-mark::before {
-        content: "";
-        position: absolute;
-        width: 18px;
-        height: 18px;
-        border-radius: 7px;
-        background: linear-gradient(135deg, var(--primary), #d1f8ff);
-        top: 12px;
-        left: 12px;
-        transform: rotate(45deg);
-        box-shadow: 0 0 20px rgba(115, 229, 255, 0.9);
-      }
+  .orb-one { background: rgba(124, 135, 255, 0.44); top: -120px; right: 0; }
+  .orb-two { background: rgba(115, 229, 255, 0.28); left: 4%; top: 260px; }
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(148, 163, 184, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at center, black 62%, transparent 100%);
+    pointer-events: none;
+  }
 
-      .brand-name {
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 1.2rem;
-        font-weight: 700;
-        letter-spacing: -0.04em;
-      }
+  .shell .topbar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-radius: 999px;
+    padding: 12px 18px;
+    background: rgba(12, 20, 30, 0.52);
+    border: 1px solid rgba(146, 170, 194, 0.12);
+    backdrop-filter: blur(22px);
+    box-shadow: 0 10px 24px rgba(5, 10, 18, 0.14);
+  }
 
-      .nav {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
+  .shell .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
 
-      .nav a {
-        color: var(--muted);
-        padding: 8px 12px;
-        border-radius: 999px;
-        transition: 0.2s ease;
-      }
+  .shell .brand-mark::before {
+    background: linear-gradient(135deg, var(--primary), #d1f8ff);
+    box-shadow: 0 0 20px rgba(115, 229, 255, 0.9);
+  }
 
-      .nav a:hover {
-        color: var(--text);
-        background: rgba(148, 163, 184, 0.08);
-      }
+  .shell .brand-name {
+    font-size: 1.2rem;
+  }
 
-      .nav-cta {
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        background: rgba(148, 163, 184, 0.05);
-        color: var(--text);
-        border-radius: 999px;
-        padding: 10px 16px;
-      }
+  .shell .nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 
-      .hero {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 24px;
-        align-items: center;
-        padding-top: 70px;
-      }
+  .shell .nav a {
+    position: relative;
+    color: var(--muted);
+    padding: 8px 12px;
+    border-radius: 999px;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+  }
 
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(115, 229, 255, 0.08);
-        color: var(--primary);
-        border: 1px solid rgba(115, 229, 255, 0.18);
-        border-radius: 999px;
-        padding: 8px 12px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        font-size: 0.68rem;
-        font-weight: 700;
-      }
+  .shell .nav a::before,
+  .nav-cta::before {
+    content: "";
+    position: absolute;
+    inset: -40% auto auto -10%;
+    width: 25%;
+    height: 180%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.18) 46%, transparent 100%);
+    transform: translateX(-150%) skewX(-18deg);
+    opacity: 0;
+    transition: transform 0.7s ease, opacity 0.25s ease;
+    pointer-events: none;
+  }
 
-      h1 {
-        margin: 18px 0 18px;
-        font-family: "Space Grotesk", sans-serif;
-        font-size: clamp(3rem, 6vw, 5.3rem);
-        line-height: 0.96;
-        letter-spacing: -0.07em;
-      }
+  .shell .nav a:hover,
+  .shell .nav a:focus-visible {
+    color: var(--text);
+    background: rgba(95, 224, 255, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(95, 224, 255, 0.09);
+    transform: translateY(-1px);
+  }
 
-      .hero p {
-        max-width: 620px;
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.8;
-        font-size: 1.05rem;
-      }
+  .shell .nav a:hover::before,
+  .shell .nav a:focus-visible::before,
+  .nav-cta:hover::before,
+  .nav-cta:focus-visible::before {
+    opacity: 1;
+    transform: translateX(420%) skewX(-18deg);
+  }
 
-      .hero-cta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 14px;
-        margin-top: 28px;
-      }
+  .nav-cta {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(148, 163, 184, 0.03);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 10px 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-      .primary-btn,
-      .secondary-btn {
-        border-radius: 999px;
-        padding: 14px 22px;
-        font-weight: 700;
-        transition: transform 0.2s ease;
-      }
+  .nav-cta:hover,
+  .nav-cta:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(95, 224, 255, 0.18);
+    background: rgba(95, 224, 255, 0.05);
+    box-shadow: 0 14px 26px rgba(8, 14, 22, 0.22), inset 0 0 0 1px rgba(95, 224, 255, 0.04);
+  }
 
-      .primary-btn {
-        background: linear-gradient(135deg, var(--primary), #dffcff 35%, #aab8ff 100%);
-        color: #05131d;
-        box-shadow: 0 22px 40px rgba(115, 229, 255, 0.24);
-      }
+  .hero {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    align-items: center;
+    padding-top: 70px;
+  }
 
-      .secondary-btn {
-        background: rgba(148, 163, 184, 0.06);
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        color: var(--text);
-      }
+  .hero .eyebrow {
+    gap: 8px;
+  }
 
-      .primary-btn:hover,
-      .secondary-btn:hover,
-      .nav-cta:hover {
-        transform: translateY(-1px);
-      }
+  h1 {
+    margin: 18px 0 18px;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(3rem, 6vw, 5.3rem);
+    line-height: 0.96;
+    letter-spacing: -0.07em;
+  }
 
-      .hero-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 14px;
-        margin-top: 28px;
-      }
+  .hero p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.8;
+    font-size: 1.05rem;
+  }
 
-      .mini-stat {
-        min-width: 132px;
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 14px 16px;
-      }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 28px;
+  }
 
-      .mini-stat strong {
-        display: block;
-        font-size: 1.3rem;
-        margin-bottom: 6px;
-      }
+  .primary-btn,
+  .secondary-btn {
+    padding: 14px 22px;
+    font-weight: 700;
+  }
 
-      .mini-stat span {
-        color: var(--muted);
-      }
+  .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 28px;
+  }
 
-      .visual-wrap {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+  .mini-stat {
+    position: relative;
+    min-width: 132px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 14px 16px;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
 
-      .dashboard-window {
-        position: relative;
-        width: min(100%, 520px);
-        padding: 16px;
-        border-radius: 26px;
-        background: linear-gradient(180deg, rgba(10, 16, 25, 0.9), rgba(11, 22, 31, 0.92));
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        box-shadow: var(--shadow);
-        transform: perspective(1200px) rotateX(12deg) rotateY(-12deg);
-        animation: boardFloat 6s ease-in-out infinite;
-      }
+  .mini-stat strong {
+    display: block;
+    font-size: 1.3rem;
+    margin-bottom: 6px;
+  }
 
-      .window-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 12px 16px;
-      }
+  .mini-stat span {
+    color: var(--muted);
+  }
 
-      .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #ff6b6b;
-      }
+  .visual-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-      .dot:nth-child(2) { background: #feca57; }
-      .dot:nth-child(3) { background: #7ae7a5; }
+  .dashboard-window {
+    position: relative;
+    width: min(100%, 520px);
+    padding: 16px;
+    border-radius: 26px;
+    background: linear-gradient(180deg, rgba(10, 16, 25, 0.9), rgba(11, 22, 31, 0.92));
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: var(--shadow);
+    transform: perspective(1200px) rotateX(12deg) rotateY(-12deg);
+    animation: boardFloat 6s ease-in-out infinite;
+  }
 
-      .window-body {
-        background: rgba(8, 14, 24, 0.8);
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        border-radius: 22px;
-        padding: 18px;
-      }
+  .window-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px 16px;
+  }
 
-      .window-topline {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 18px;
-      }
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff6b6b;
+  }
 
-      .chip {
-        border-radius: 999px;
-        padding: 7px 10px;
-        background: rgba(115, 229, 255, 0.08);
-        color: var(--primary);
-        border: 1px solid rgba(115, 229, 255, 0.18);
-        font-size: 0.72rem;
-      }
+  .dot:nth-child(2) { background: #feca57; }
+  .dot:nth-child(3) { background: #7ae7a5; }
 
-      .signal-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin-bottom: 18px;
-      }
+  .window-body {
+    background: rgba(8, 14, 24, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 22px;
+    padding: 18px;
+  }
 
-      .signal-box {
-        background: rgba(15, 23, 42, 0.78);
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        border-radius: 16px;
-        padding: 14px;
-      }
+  .window-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
 
-      .kicker {
-        color: var(--muted);
-        font-size: 0.7rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
+  .chip {
+    border-radius: 999px;
+    padding: 7px 10px;
+    background: rgba(115, 229, 255, 0.08);
+    color: var(--primary);
+    border: 1px solid rgba(115, 229, 255, 0.18);
+    font-size: 0.72rem;
+  }
 
-      .signal-box strong {
-        display: block;
-        margin-top: 8px;
-        font-size: 1.45rem;
-      }
+  .signal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
 
-      .chart {
-        display: flex;
-        align-items: end;
-        gap: 7px;
-        height: 120px;
-        padding-top: 12px;
-      }
+  .signal-box {
+    position: relative;
+    background: rgba(15, 23, 42, 0.78);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 16px;
+    padding: 14px;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
 
-      .chart span {
-        display: block;
-        flex: 1;
-        border-radius: 10px 10px 0 0;
-        height: var(--h);
-        background: linear-gradient(180deg, rgba(115, 229, 255, 0.9), rgba(124, 135, 255, 0.9));
-        box-shadow: inset 0 0 12px rgba(255,255,255,.18);
-      }
+  .signal-box::before,
+  .step-card::before,
+  .product-card::before,
+  .feature-card::before,
+  .price-card::before,
+  .mini-stat::before {
+    content: "";
+    position: absolute;
+    inset: -30% -15% auto auto;
+    width: 52%;
+    height: 180%;
+    background: linear-gradient(120deg,
+      transparent 12%,
+      rgba(255, 255, 255, 0.12) 24%,
+      rgba(125, 241, 255, 0.72) 38%,
+      rgba(255, 255, 255, 0.22) 48%,
+      rgba(140, 139, 255, 0.14) 58%,
+      transparent 74%);
+    transform: translateX(150%) rotate(12deg);
+    opacity: 0;
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+    pointer-events: none;
+  }
 
-      .alert-row {
-        margin-top: 18px;
-        padding: 14px 16px;
-        border-radius: 16px;
-        border: 1px solid rgba(141, 240, 186, 0.18);
-        background: rgba(141, 240, 186, 0.08);
-        color: #d3ffeb;
-      }
+  .signal-box:hover,
+  .step-card:hover,
+  .product-card:hover,
+  .feature-card:hover,
+  .price-card:hover,
+  .mini-stat:hover {
+    transform: translateY(-5px);
+    border-color: rgba(95, 224, 255, 0.35);
+    box-shadow: 0 26px 40px rgba(8, 14, 22, 0.42), 0 0 0 1px rgba(95, 224, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
 
-      .intro-panel {
-        position: relative;
-        z-index: 1;
-        margin-top: 70px;
-        padding: 26px 24px;
-        border-radius: 26px;
-        background: rgba(9, 16, 25, 0.72);
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        box-shadow: var(--shadow);
-      }
+  .signal-box:hover::before,
+  .step-card:hover::before,
+  .product-card:hover::before,
+  .feature-card:hover::before,
+  .price-card:hover::before,
+  .mini-stat:hover::before {
+    opacity: 1;
+    transform: translateX(0) rotate(12deg);
+  }
 
-      .intro-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 20px;
-      }
+  .kicker {
+    color: var(--muted);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-      .intro-header h2 {
-        margin: 0;
-        font-size: clamp(1.8rem, 4vw, 2.7rem);
-        letter-spacing: -0.05em;
-      }
+  .signal-box strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 1.45rem;
+  }
 
-      .intro-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(115, 229, 255, 0.08);
-        border: 1px solid rgba(115, 229, 255, 0.18);
-        color: var(--primary);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        font-weight: 700;
-      }
+  .chart {
+    display: flex;
+    align-items: end;
+    gap: 7px;
+    height: 120px;
+    padding-top: 12px;
+  }
 
-      .intro-copy {
-        margin: 0 0 26px;
-        max-width: 760px;
-        color: var(--muted);
-        line-height: 1.8;
-      }
+  .chart span {
+    display: block;
+    flex: 1;
+    border-radius: 10px 10px 0 0;
+    height: var(--h);
+    background: linear-gradient(180deg, rgba(115, 229, 255, 0.9), rgba(124, 135, 255, 0.9));
+    box-shadow: inset 0 0 12px rgba(255,255,255,.18);
+  }
 
-      .step-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 16px;
-      }
+  .alert-row {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(141, 240, 186, 0.18);
+    background: rgba(141, 240, 186, 0.08);
+    color: #d3ffeb;
+  }
 
-      .step-card {
-        background: rgba(15, 23, 42, 0.72);
-        border: 1px solid rgba(148, 163, 184, 0.12);
-        border-radius: 18px;
-        padding: 18px 16px;
-      }
+  .product-showcase {
+    position: relative;
+    z-index: 1;
+    margin-top: 70px;
+    padding: 28px 24px 12px;
+    border-radius: 26px;
+    background: rgba(9, 16, 25, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    box-shadow: var(--shadow);
+  }
 
-      .step-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        margin-bottom: 16px;
-        border-radius: 12px;
-        background: linear-gradient(135deg, rgba(115, 229, 255, 0.18), rgba(124, 135, 255, 0.24));
-        border: 1px solid rgba(115, 229, 255, 0.2);
-        color: var(--primary);
-        font-weight: 800;
-      }
+  .product-showcase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
 
-      .step-card h3 {
-        margin: 0 0 10px;
-        font-size: 1.08rem;
-      }
+  .product-showcase-header h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    letter-spacing: -0.05em;
+  }
 
-      .step-card p {
-        margin: 0;
-        color: var(--muted);
-        line-height: 1.7;
-      }
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
 
-      .feature-rail {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        margin-top: 28px;
-      }
+  .product-card {
+    padding: 18px 18px 16px;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
 
-      .feature-card {
-        background: rgba(10, 18, 27, 0.7);
-        border: 1px solid rgba(148, 163, 184, 0.14);
-        border-radius: 22px;
-        padding: 24px 20px;
-        box-shadow: var(--shadow);
-      }
+  .product-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, rgba(115, 229, 255, 0.8), rgba(124, 135, 255, 0.9));
+  }
 
-      .feature-card strong {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 46px;
-        height: 46px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, rgba(115, 229, 255, 0.18), rgba(124, 135, 255, 0.24));
-        border: 1px solid rgba(115, 229, 255, 0.18);
-        margin-bottom: 18px;
-        color: var(--primary);
-        font-weight: 800;
-      }
+  .product-card .label {
+    display: inline-flex;
+    margin-bottom: 14px;
+    color: var(--primary);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
 
-      .feature-card h3 {
-        margin: 0 0 10px;
-        font-size: 1.18rem;
-      }
+  .product-card h3 {
+    margin: 0 0 12px;
+    font-size: 1.2rem;
+  }
 
-      .feature-card p {
-        margin: 0;
-        line-height: 1.7;
-        color: var(--muted);
-      }
+  .product-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
+  }
 
-      @keyframes boardFloat {
-        0%, 100% { transform: perspective(1200px) rotateX(12deg) rotateY(-12deg) translateY(0px); }
-        50% { transform: perspective(1200px) rotateX(14deg) rotateY(-8deg) translateY(-10px); }
-      }
+  .metric-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+  }
 
-      @media (max-width: 900px) {
-        .hero, .feature-rail {
-          grid-template-columns: 1fr;
-        }
-        .nav {
-          display: none;
-        }
-      }
+  .metric-row strong {
+    font-size: 1.4rem;
+  }
 
-      @media (max-width: 640px) {
-        .shell { padding: 16px 14px 60px; }
-        .topbar { border-radius: 24px; padding: 14px 16px; }
-        .brand-name { font-size: 1rem; }
-        .hero { padding-top: 42px; }
-        .hero-cta { flex-direction: column; }
-        .primary-btn, .secondary-btn, .nav-cta { width: 100%; }
-        .signal-grid { grid-template-columns: 1fr; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="shell">
-      <div class="bg-orb orb-one"></div>
-      <div class="bg-orb orb-two"></div>
-      <div class="grid"></div>
+  .metric-row span {
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
 
-      <header class="topbar">
-        <div class="brand">
-          <div class="brand-mark" aria-label="SignalSentry logo"></div>
-          <div class="brand-name">SignalSentry</div>
+  .intro-panel {
+    position: relative;
+    z-index: 1;
+    margin-top: 70px;
+    padding: 26px 24px;
+    border-radius: 26px;
+    background: rgba(9, 16, 25, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    box-shadow: var(--shadow);
+  }
+
+  .intro-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .intro-header h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    letter-spacing: -0.05em;
+  }
+
+  .intro-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(115, 229, 255, 0.08);
+    border: 1px solid rgba(115, 229, 255, 0.18);
+    color: var(--primary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .intro-copy {
+    margin: 0 0 26px;
+    max-width: 760px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .step-card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(10, 17, 27, 0.92));
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 20px;
+    padding: 18px 16px 16px;
+    box-shadow: inset 0 1px 0 rgba(148, 163, 184, 0.08), 0 18px 35px rgba(2, 6, 12, 0.18);
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    overflow: hidden;
+  }
+
+  .step-card h3 {
+    margin: 0 0 10px;
+    font-size: 1.08rem;
+  }
+
+  .step-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .step-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(148, 163, 184, 0.08);
+  }
+
+  .step-stat strong {
+    font-size: 1.55rem;
+    letter-spacing: -0.05em;
+  }
+
+  .step-stat span {
+    color: var(--muted);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .signal-visual {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+    gap: 8px;
+    height: 112px;
+    margin: 0 0 16px;
+    padding: 16px 12px 12px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(6, 13, 22, 0.92), rgba(11, 17, 26, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .signal-visual::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(115, 229, 255, 0.08), transparent 40%);
+    pointer-events: none;
+  }
+
+  .signal-visual span {
+    position: relative;
+    display: block;
+    border-radius: 999px 999px 6px 6px;
+    background: linear-gradient(180deg, rgba(167, 243, 255, 1), rgba(115, 229, 255, 0.9) 30%, rgba(124, 135, 255, 0.75) 100%);
+    box-shadow: 0 10px 16px rgba(71, 140, 255, 0.18), inset 0 2px 6px rgba(255, 255, 255, 0.15);
+    transform-origin: bottom center;
+    animation: signalPulse 2.8s ease-in-out infinite;
+  }
+
+  .signal-visual span:nth-child(1) { height: 26%; animation-delay: 0.1s; }
+  .signal-visual span:nth-child(2) { height: 42%; animation-delay: 0.25s; }
+  .signal-visual span:nth-child(3) { height: 68%; animation-delay: 0.5s; }
+  .signal-visual span:nth-child(4) { height: 100%; animation-delay: 0.75s; }
+
+  @keyframes signalPulse {
+    0%, 100% {
+      transform: scaleY(0.96);
+      opacity: 0.82;
+      filter: brightness(0.95);
+    }
+    50% {
+      transform: scaleY(1.04);
+      opacity: 1;
+      filter: brightness(1.12);
+    }
+  }
+
+  .feature-rail {
+    position: relative;
+    z-index: 1;
+    margin-top: 26px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 22px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .feature-card::before {
+    content: "";
+    position: absolute;
+    inset: auto -30% -35% auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(115, 229, 255, 0.24), transparent 65%);
+    pointer-events: none;
+  }
+
+  .feature-card strong {
+    color: var(--primary);
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 10px;
+    font-size: 1.18rem;
+  }
+
+  .feature-card p {
+    margin: 0;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .feature-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    gap: 12px;
+  }
+
+  .feature-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(115, 229, 255, 0.08);
+    border: 1px solid rgba(115, 229, 255, 0.16);
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .feature-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #7ae7a5;
+    box-shadow: 0 0 16px rgba(122, 231, 165, 0.8);
+  }
+
+  .pricing-preview {
+    position: relative;
+    z-index: 1;
+    margin-top: 26px;
+    padding: 28px 24px 20px;
+    border-radius: 26px;
+    background: rgba(9, 16, 25, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    box-shadow: var(--shadow);
+  }
+
+  .pricing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .pricing-header h2 {
+    margin: 0;
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    letter-spacing: -0.05em;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .price-card {
+    padding: 20px 18px;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .price-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, rgba(115, 229, 255, 0.7), rgba(124, 135, 255, 0.9));
+  }
+
+  .price-card.featured {
+    background: linear-gradient(180deg, rgba(17, 28, 41, 0.9), rgba(13, 22, 34, 0.9));
+    border-color: rgba(115, 229, 255, 0.24);
+    box-shadow: inset 0 0 0 1px rgba(115, 229, 255, 0.12);
+  }
+
+  .tier-label {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: var(--primary);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+
+  .price-row {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .price-row strong {
+    font-size: clamp(2rem, 3vw, 3rem);
+    letter-spacing: -0.06em;
+  }
+
+  .price-row span {
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+
+  .price-card ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+
+  .price-visual {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
+    gap: 6px;
+    height: 62px;
+    margin: 18px 0 8px;
+    padding: 10px 6px 0;
+    border-radius: 12px;
+    background: rgba(9, 16, 25, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+  }
+
+  .price-visual span {
+    display: block;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, rgba(115, 229, 255, 0.9), rgba(124, 135, 255, 0.75));
+  }
+
+  .price-visual span:nth-child(1) { height: 40%; }
+  .price-visual span:nth-child(2) { height: 55%; }
+  .price-visual span:nth-child(3) { height: 70%; }
+  .price-visual span:nth-child(4) { height: 84%; }
+  .price-visual span:nth-child(5) { height: 100%; }
+
+  @keyframes boardFloat {
+    0%, 100% { transform: perspective(1200px) rotateX(12deg) rotateY(-12deg) translateY(0px); }
+    50% { transform: perspective(1200px) rotateX(14deg) rotateY(-8deg) translateY(-10px); }
+  }
+
+  @media (max-width: 900px) {
+    .hero,
+    .feature-rail,
+    .step-grid,
+    .signal-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .topbar {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .shell {
+      padding: 16px 14px 60px;
+    }
+
+    .topbar {
+      flex-direction: column;
+      align-items: stretch;
+      border-radius: 24px;
+      padding: 14px 16px;
+    }
+
+    .nav {
+      width: 100%;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .nav a,
+    .nav-cta,
+    .primary-btn,
+    .secondary-btn {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+
+    .hero-cta,
+    .hero-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .hero {
+      gap: 18px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 11vw, 3rem);
+    }
+
+    .step-grid,
+    .feature-rail,
+    .signal-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block shell_class %}shell{% endblock %}
+
+{% block background_decor %}
+<div class="bg-orb orb-one"></div>
+<div class="bg-orb orb-two"></div>
+<div class="grid"></div>
+{% endblock %}
+
+{% block brand %}
+<a href="#top" class="brand" aria-label="SignalSentry home">
+  <div class="brand-mark" aria-hidden="true"></div>
+  <div class="brand-name">SignalSentry</div>
+</a>
+{% endblock %}
+
+{% block nav_links %}
+<a href="#product">Product</a>
+<a href="#signals">Signals</a>
+<a href="#pricing">Pricing</a>
+<a href="/dashboard">Dashboard</a>
+{% endblock %}
+
+{% block top_actions %}
+<div class="nav-cluster">
+  <a href="/login" class="profile-badge" data-profile-pill>
+    <span class="profile-avatar">C</span>
+    <span class="profile-text">Company</span>
+  </a>
+  <a href="/dashboard" class="nav-cta">Open dashboard</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="hero" id="top">
+  <div>
+    <div class="eyebrow">AI market signal engine</div>
+    <h1>Track competitor moves before they hit your pipeline.</h1>
+    <p>
+      SignalSentry monitors public competitor pages, catches pricing and product shifts,
+      ranks them by business impact, and delivers a digest that keeps sales and product teams aligned.
+    </p>
+
+    <div class="hero-cta">
+      <a class="primary-btn" href="/dashboard">Launch dashboard</a>
+      <a class="secondary-btn" href="/docs">View API</a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="mini-stat">
+        <strong>5x</strong>
+        <span>faster intel</span>
+      </div>
+      <div class="mini-stat">
+        <strong>24/7</strong>
+        <span>monitoring</span>
+      </div>
+      <div class="mini-stat">
+        <strong>91%</strong>
+        <span>signal confidence</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="visual-wrap">
+    <div class="dashboard-window" aria-label="SignalSentry dashboard preview">
+      <div class="window-header">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+
+      <div class="window-body">
+        <div class="window-topline">
+          <strong>Live signal map</strong>
+          <span class="chip">+12.4%</span>
         </div>
 
-        <nav class="nav" aria-label="Main nav">
-          <a href="#product">Product</a>
-          <a href="#signals">Signals</a>
-          <a href="#pricing">Pricing</a>
-        </nav>
-
-        <a href="/ui" class="nav-cta">Open dashboard</a>
-      </header>
-
-      <main>
-        <section class="hero" id="product">
-          <div>
-            <div class="eyebrow">AI market signal engine</div>
-            <h1>Track competitor moves before they hit your pipeline.</h1>
-            <p>
-              SignalSentry monitors public competitor pages, catches pricing and product shifts,
-              ranks them by business impact, and delivers a digest that keeps sales and product teams aligned.
-            </p>
-
-            <div class="hero-cta">
-              <a class="primary-btn" href="/ui">Launch dashboard</a>
-              <a class="secondary-btn" href="/docs">View API</a>
-            </div>
-
-            <div class="hero-stats">
-              <div class="mini-stat">
-                <strong>5x</strong>
-                <span>faster intel</span>
-              </div>
-              <div class="mini-stat">
-                <strong>24/7</strong>
-                <span>monitoring</span>
-              </div>
-              <div class="mini-stat">
-                <strong>91%</strong>
-                <span>signal confidence</span>
-              </div>
-            </div>
+        <div class="signal-grid">
+          <div class="signal-box">
+            <div class="kicker">Competitors</div>
+            <strong>18</strong>
           </div>
-
-          <div class="visual-wrap">
-            <div class="dashboard-window" aria-label="SignalSentry dashboard preview">
-              <div class="window-header">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-              </div>
-
-              <div class="window-body">
-                <div class="window-topline">
-                  <strong>Live signal map</strong>
-                  <span class="chip">+12.4%</span>
-                </div>
-
-                <div class="signal-grid">
-                  <div class="signal-box">
-                    <div class="kicker">Competitors</div>
-                    <strong>18</strong>
-                  </div>
-                  <div class="signal-box">
-                    <div class="kicker">Alerts</div>
-                    <strong>07</strong>
-                  </div>
-                  <div class="signal-box">
-                    <div class="kicker">Coverage</div>
-                    <strong>93%</strong>
-                  </div>
-                </div>
-
-                <div class="chart" aria-hidden="true">
-                  <span style="--h: 28%"></span>
-                  <span style="--h: 35%"></span>
-                  <span style="--h: 42%"></span>
-                  <span style="--h: 58%"></span>
-                  <span style="--h: 74%"></span>
-                  <span style="--h: 82%"></span>
-                  <span style="--h: 90%"></span>
-                  <span style="--h: 76%"></span>
-                  <span style="--h: 96%"></span>
-                  <span style="--h: 100%"></span>
-                </div>
-
-                <div class="alert-row">Pricing shift detected for Acme — plan increase on Pro tier.</div>
-              </div>
-            </div>
+          <div class="signal-box">
+            <div class="kicker">Alerts</div>
+            <strong>07</strong>
           </div>
-        </section>
-
-        <section class="intro-panel" id="signals">
-          <div class="intro-header">
-            <h2>What this app does</h2>
-            <span class="intro-badge">New user guide</span>
+          <div class="signal-box">
+            <div class="kicker">Coverage</div>
+            <strong>93%</strong>
           </div>
+        </div>
 
-          <p class="intro-copy">
-            SignalSentry helps you stay ahead of the market by automatically tracking competitor pages,
-            spotting pricing and product changes, and turning those shifts into short, actionable insights.
-            If you are new here, follow the steps below to understand how the platform works from start to finish.
-          </p>
+        <div class="chart" aria-hidden="true">
+          <span style="--h: 28%"></span>
+          <span style="--h: 35%"></span>
+          <span style="--h: 42%"></span>
+          <span style="--h: 58%"></span>
+          <span style="--h: 74%"></span>
+          <span style="--h: 82%"></span>
+          <span style="--h: 90%"></span>
+          <span style="--h: 76%"></span>
+          <span style="--h: 96%"></span>
+          <span style="--h: 100%"></span>
+        </div>
 
-          <div class="step-grid">
-            <article class="step-card">
-              <div class="step-number">1</div>
-              <h3>Add a competitor</h3>
-              <p>Start by adding a company name and domain. The app stores the competitor and begins the monitoring setup.</p>
-            </article>
-
-            <article class="step-card">
-              <div class="step-number">2</div>
-              <h3>Track key pages</h3>
-              <p>Attach the pages you care about most, such as pricing, product, careers, or messaging pages.</p>
-            </article>
-
-            <article class="step-card">
-              <div class="step-number">3</div>
-              <h3>Monitor and compare</h3>
-              <p>The system checks those pages over time, captures content snapshots, and highlights meaningful changes.</p>
-            </article>
-
-            <article class="step-card">
-              <div class="step-number">4</div>
-              <h3>See alerts and digest</h3>
-              <p>High-impact changes are grouped into digest insights and alerts so your team can act quickly.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="feature-rail" id="pricing">
-          <article class="feature-card">
-            <strong>01</strong>
-            <h3>Competitor discovery</h3>
-            <p>Automatically find likely pricing, product, and hiring pages from public competitor domains.</p>
-          </article>
-
-          <article class="feature-card">
-            <strong>02</strong>
-            <h3>Change intelligence</h3>
-            <p>Detect real market movements, ignore noise, and flag pricing shifts before they become lost deals.</p>
-          </article>
-
-          <article class="feature-card">
-            <strong>03</strong>
-            <h3>Actionable digest</h3>
-            <p>Turn raw web changes into short summaries, confidence scores, and alerts your team can trust.</p>
-          </article>
-        </section>
-      </main>
+        <div class="alert-row">Pricing shift detected for Acme — plan increase on Pro tier.</div>
+      </div>
     </div>
-  </body>
-</html>
+  </div>
+</section>
+
+<section class="feature-rail">
+  <article class="feature-card">
+    <strong>01</strong>
+    <h3>Product</h3>
+    <p>Track new features, roadmap changes, packaging shifts, and competitor launches across product pages and release messaging.</p>
+    <div class="feature-meta">
+      <span class="feature-pill"><span class="feature-dot"></span>Live</span>
+      <span class="intro-badge" data-product-pill>+0%</span>
+    </div>
+  </article>
+
+  <article class="feature-card">
+    <strong>02</strong>
+    <h3>Signals</h3>
+    <p>Rank competitor changes by confidence, urgency, and category impact so teams can quickly understand market direction.</p>
+    <div class="feature-meta">
+      <span class="feature-pill"><span class="feature-dot"></span>Ranked</span>
+      <span class="intro-badge" data-signal-pill>0</span>
+    </div>
+  </article>
+
+  <article class="feature-card">
+    <strong>03</strong>
+    <h3>Pricing</h3>
+    <p>Monitor plan changes, discounting patterns, bundle shifts, and enterprise pricing moves across the market in real time.</p>
+    <div class="feature-meta">
+      <span class="feature-pill"><span class="feature-dot"></span>Tracked</span>
+      <span class="intro-badge" data-pricing-pill>+0%</span>
+    </div>
+  </article>
+</section>
+
+<section class="product-showcase" id="product">
+  <div class="product-showcase-header">
+    <h2>Product</h2>
+    <span class="intro-badge">Built for competitive teams</span>
+  </div>
+
+  <div class="product-grid">
+    <article class="product-card">
+      <span class="label">Coverage</span>
+      <h3>Monitor the market in one place</h3>
+      <p>SignalSentry captures pricing, product, and hiring changes across the competitive landscape without manual research.</p>
+      <div class="metric-row">
+        <strong>18</strong>
+        <span>tracks</span>
+      </div>
+    </article>
+
+    <article class="product-card">
+      <span class="label">Signals</span>
+      <h3>Prioritize what matters most</h3>
+      <p>Each change is scored for confidence, urgency, and business impact so teams focus on moves that shape revenue and strategy.</p>
+      <div class="metric-row">
+        <strong>3.2x</strong>
+        <span>faster</span>
+      </div>
+    </article>
+
+    <article class="product-card">
+      <span class="label">Digest</span>
+      <h3>Turn change data into action</h3>
+      <p>Alerts are grouped into clear summaries for product, pricing, and go-to-market teams to move quickly with context.</p>
+      <div class="metric-row">
+        <strong>91%</strong>
+        <span>confidence</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="intro-panel" id="signals">
+  <div class="intro-header">
+    <h2>Signals</h2>
+    <span class="intro-badge">Live market intelligence</span>
+  </div>
+
+  <p class="intro-copy">
+    SignalSentry continuously scans competitor pages for product launches, pricing revisions, and market signals that reshape your category — surfacing what changed, why it matters, and which actions should follow.
+  </p>
+
+  <div class="step-grid">
+    <article class="step-card">
+      <div class="signal-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <h3>Product changes</h3>
+      <p>Track feature launches, packaging updates, positioning shifts, and product expansion moves before competitors turn them into momentum.</p>
+      <div class="step-stat">
+        <strong data-signal-count="product">0</strong>
+        <span>product moves</span>
+      </div>
+    </article>
+
+    <article class="step-card">
+      <div class="signal-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <h3>Pricing revisions</h3>
+      <p>Catch tier changes, discount updates, seat-based pricing shifts, and plan migrations with high-confidence alerting.</p>
+      <div class="step-stat">
+        <strong data-signal-count="pricing">0</strong>
+        <span>pricing changes</span>
+      </div>
+    </article>
+
+    <article class="step-card">
+      <div class="signal-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <h3>Hiring signals</h3>
+      <p>Monitor hiring-page changes to detect expansion, new focus areas, and investment signals that often precede product or pricing moves.</p>
+      <div class="step-stat">
+        <strong data-signal-count="hiring">0</strong>
+        <span>market signals</span>
+      </div>
+    </article>
+
+    <article class="step-card">
+      <div class="signal-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      <h3>Digest summaries</h3>
+      <p>Group important events into concise competitor briefings your GTM, product, and pricing teams can act on in minutes.</p>
+      <div class="step-stat">
+        <strong data-signal-count="digest">0</strong>
+        <span>priority alerts</span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="pricing-preview" id="pricing" aria-label="Sample pricing preview">
+  <div class="pricing-header">
+    <h2>Pricing</h2>
+    <span class="intro-badge">Pricing intelligence</span>
+  </div>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <span class="tier-label">Starter</span>
+      <div class="price-row"><strong data-price-value="starter">$19</strong><span>/seat</span></div>
+      <div class="price-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <ul>
+        <li>Core market monitoring</li>
+        <li>Daily competitor alerts</li>
+        <li>Weekly pricing brief</li>
+      </ul>
+    </div>
+
+    <div class="price-card featured">
+      <span class="tier-label">Pro</span>
+      <div class="price-row"><strong data-price-value="pro">$49</strong><span>/seat</span></div>
+      <div class="price-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <ul>
+        <li>Pricing change tracking</li>
+        <li>Competitive benchmark views</li>
+        <li>Advanced signal scoring</li>
+      </ul>
+    </div>
+
+    <div class="price-card">
+      <span class="tier-label">Enterprise</span>
+      <div class="price-row"><strong data-price-value="enterprise">$99</strong><span>/seat</span></div>
+      <div class="price-visual" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <ul>
+        <li>Custom market monitoring</li>
+        <li>Executive reporting</li>
+        <li>Priority strategy alerts</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+  async function hydrateLandingMetrics() {
+    const setNumber = (selector, value) => {
+      const node = document.querySelector(selector);
+      if (node) node.textContent = value;
+    };
+
+    try {
+      const response = await fetch('/metrics/overview');
+      if (!response.ok) return;
+      const metrics = await response.json();
+
+      const pricingCount = Number(metrics.change_items_by_category?.pricing ?? 0);
+      const productCount = Number(metrics.change_items_by_category?.product ?? 0);
+      const hiringCount = Number(metrics.change_items_by_category?.hiring ?? 0);
+      const totalSignals = Number(metrics.recent_change_items_7d ?? 0);
+      const coverage = Number(metrics.coverage_percent ?? 0);
+      const competitors = Number(metrics.total_competitors ?? 0);
+      const activeTracked = Number(metrics.active_tracked_urls ?? 0);
+
+      document.querySelectorAll('[data-signal-count]').forEach((node) => {
+        const key = node.getAttribute('data-signal-count');
+        const value = key === 'pricing' ? pricingCount : key === 'product' ? productCount : key === 'hiring' ? hiringCount : totalSignals;
+        node.textContent = value;
+      });
+
+      const productPill = document.querySelector('[data-product-pill]');
+      if (productPill) productPill.textContent = `${coverage > 0 ? '+' : ''}${Math.round(coverage)}%`;
+
+      const signalPill = document.querySelector('[data-signal-pill]');
+      if (signalPill) signalPill.textContent = String(totalSignals || 0);
+
+      const pricingPill = document.querySelector('[data-pricing-pill]');
+      if (pricingPill) pricingPill.textContent = `${pricingCount ? '+' : ''}${pricingCount}`;
+
+      setNumber('[data-price-value="starter"]', `$${Math.max(19, Math.round((pricingCount || 0) * 0.7) + 19)}`);
+      setNumber('[data-price-value="pro"]', `$${Math.max(49, Math.round((productCount || 0) * 0.8) + 49)}`);
+      setNumber('[data-price-value="enterprise"]', `$${Math.max(99, Math.round((hiringCount || 0) * 1.2) + 99)}`);
+
+      const productCardOne = document.querySelector('.product-card:nth-child(1) .metric-row strong');
+      if (productCardOne) productCardOne.textContent = String(competitors || 0);
+
+      const productCardTwo = document.querySelector('.product-card:nth-child(2) .metric-row strong');
+      if (productCardTwo) productCardTwo.textContent = `${Math.max(0, activeTracked)}${activeTracked ? 'x' : ''}`;
+
+      const productCardThree = document.querySelector('.product-card:nth-child(3) .metric-row strong');
+      if (productCardThree) productCardThree.textContent = String(totalSignals || 0);
+    } catch (error) {
+      console.warn('Landing metric hydration failed', error);
+    }
+  }
+
+  hydrateLandingMetrics();
+</script>
+{% endblock %}

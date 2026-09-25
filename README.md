@@ -101,6 +101,16 @@ The project includes a queue-backed monitoring flow for scheduled checks.
 python -m app.workers.queue_worker
 ```
 
+## Demo data
+
+Reset the local database to a reproducible, realistic demo dataset (4 competitors, tracked pages, pricing/product/hiring snapshot history, diffs, and change items):
+
+```bash
+python -m scripts.seed_demo_data
+```
+
+Add `--keep-existing` to insert missing demo rows without wiping the database. The seeder is idempotent — re-running it reproduces the same dataset.
+
 ## Docker deployment
 
 ```bash

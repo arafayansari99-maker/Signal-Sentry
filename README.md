@@ -1,40 +1,42 @@
 # Signal-Sentry
 
-Signal-Sentry is a competitive intelligence monitoring platform that helps teams track competitor pricing, product positioning, and public website changes in near real time.
+Signal-Sentry is an open competitive intelligence dashboard for tracking competitor pricing, product changes, and market signals in one place.
 
-It continuously watches competitor pages, captures content snapshots, identifies important changes, and turns them into clear alerts and digests for sales, product, and growth teams.
+The app combines a public landing page, a live dashboard, and background monitoring workflows to surface important changes across competitor websites without requiring a company-auth flow.
 
-## Why this project exists
+## What this project does
 
-Most competitive monitoring is still manual and reactive. Signal-Sentry automates the monitoring loop so teams can spot:
+Signal-Sentry helps teams monitor:
 
-- pricing changes
-- feature or copy updates
-- new product pages or positioning shifts
-- hiring and hiring-page updates
-- market signals that may impact revenue or strategy
+- pricing and promotion changes
+- product and positioning updates
+- hiring-page and company signal changes
+- market activity that may affect revenue or strategy
+- digest summaries and exportable insight reports
 
 ## Core features
 
-- competitor and URL tracking
-- URL discovery for pricing, product, and careers pages
-- page snapshot capture and history tracking
-- change detection and materiality scoring
-- digest generation for alerts and summaries
-- email and Slack-ready alerting hooks
-- queue-based background job execution for scheduled monitoring
-- dashboard for live status and competitor monitoring
+- public landing page and marketing shell
+- live dashboard overview with monitoring metrics
+- competitor and page tracking
+- snapshot capture and historical comparisons
+- diffing and signal classification
+- digest generation and export endpoints
+- Redis/RQ-backed queue execution for monitoring jobs
+- scheduler-driven background processes
+- Docker-ready local stack for development and demo use
 
 ## Tech stack
 
 - Python 3.12
 - FastAPI
+- Jinja2 templates
 - SQLAlchemy
 - SQLite for local development
-- PostgreSQL-ready production configuration
-- APScheduler and Redis/RQ-friendly background workers
-- BeautifulSoup and scraping helpers for page extraction
-- Docker Compose for local and deployment simulation
+- PostgreSQL-ready configuration
+- APScheduler + Redis + RQ for background jobs
+- BeautifulSoup and Playwright for web monitoring
+- Docker Compose for local deployment
 
 ## Project structure
 
@@ -47,11 +49,19 @@ app/
   queue.py
   schemas.py
   services/
+  static/
   templates/
   workers/
 
+scripts/
+  seed_demo_data.py
+
 tests/
   test_api.py
+  test_digests.py
+  test_metrics.py
+  test_scheduler_job.py
+  test_seed_script.py
   test_smoke.py
 
 Dockerfile
@@ -79,23 +89,21 @@ Then open:
 
 ## Configuration
 
-Copy the example environment file and fill in your secrets locally. Do not commit your actual `.env` file.
+Copy the example environment file and populate the local settings you need for monitoring and queue execution.
 
 ```bash
 copy .env.example .env
 ```
 
-Example values include:
+Typical values include:
 
-- app environment settings
-- database connection URL
+- app environment name and mode
+- database URL
 - Redis URL
-- SMTP credentials
-- Slack webhook URL
+- monitoring queue settings
+- optional SMTP or Slack hooks
 
 ## Running background jobs
-
-The project includes a queue-backed monitoring flow for scheduled checks.
 
 ```bash
 python -m app.workers.queue_worker
@@ -103,13 +111,13 @@ python -m app.workers.queue_worker
 
 ## Demo data
 
-Reset the local database to a reproducible, realistic demo dataset (4 competitors, tracked pages, pricing/product/hiring snapshot history, diffs, and change items):
+Reset the local database with realistic sample monitoring data:
 
 ```bash
 python -m scripts.seed_demo_data
 ```
 
-Add `--keep-existing` to insert missing demo rows without wiping the database. The seeder is idempotent — re-running it reproduces the same dataset.
+`--keep-existing` can be added to preserve current rows while filling missing demo data.
 
 ## Docker deployment
 
@@ -117,7 +125,7 @@ Add `--keep-existing` to insert missing demo rows without wiping the database. T
 docker compose up --build
 ```
 
-This starts the API service, worker, database, and Redis in a mock production-style stack.
+This starts the app, worker processes, database, and queue services for a mock production-like environment.
 
 ## Monitoring flow
 
@@ -127,18 +135,18 @@ discovery → scrape → snapshot → diff → classify → alert → digest
 
 ## Security note
 
-This repository intentionally excludes secrets and local environment files. Only `.env.example` is included as a template.
+This repository intentionally excludes real secrets and local environment files. Only `.env.example` is included as a template.
 
 ## License
 
-This project is currently provided as a demo and internal prototype for competitive intelligence workflows.
+This project is provided as an internal prototype and demo for competitive intelligence workflows.
 
 ## Contributing
 
-Pull requests are welcome for:
+Contributions are welcome for:
 
-- better competitor discovery heuristics
-- smarter diffing logic
+- better discovery heuristics
+- stronger diffing logic
 - richer digest summaries
-- queue and deployment improvements
-- UI and dashboard enhancements
+- queue and scheduling improvements
+- dashboard and UX polish

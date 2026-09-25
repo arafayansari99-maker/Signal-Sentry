@@ -25,11 +25,20 @@ def send_email_alert(to_address: str, competitor_name: str, category: str, summa
     if not settings.smtp_host or not to_address:
         return {"status": "skipped", "reason": "smtp disabled or recipient missing"}
 
+    return _send_email_message(
+        to_address=to_address,
+        subject=f"SignalSentry alert: {competitor_name} ({category})",
+        body=compose_alert_message(competitor_name, category, summary),
+    )
+
+
+def _send_email_message(*, to_address: str, subject: str, body: str) -> dict[str, Any]:
+    settings = get_settings()
     msg = EmailMessage()
-    msg["Subject"] = f"SignalSentry alert: {competitor_name} ({category})"
+    msg["Subject"] = subject
     msg["From"] = settings.smtp_from or "signalsentry@local.dev"
     msg["To"] = to_address
-    msg.set_content(compose_alert_message(competitor_name, category, summary))
+    msg.set_content(body)
 
     with smtplib.SMTP(settings.smtp_host, settings.smtp_port or 25, timeout=10) as smtp:
         if settings.smtp_user and settings.smtp_password:

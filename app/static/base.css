@@ -106,7 +106,10 @@ img { max-width: 100%; display: block; }
 .nav {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 6px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 999px;
@@ -164,6 +167,9 @@ img { max-width: 100%; display: block; }
 
 .nav a {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--muted);
   padding: 9px 14px;
   border-radius: 999px;

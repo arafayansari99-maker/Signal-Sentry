@@ -1174,21 +1174,12 @@
 {% block shell_class %}app-shell{% endblock %}
 
 {% block nav_links %}
-<a href="#overview" aria-current="page">Overview</a>
 <a href="#watchlist">Watchlist</a>
 <a href="#alerts">Alerts</a>
 <a href="#queue-monitor">Queue</a>
 {% endblock %}
 
-{% block top_actions %}
-<div class="nav-cluster">
-  <a href="/login" class="profile-badge" data-profile-pill>
-    <span class="profile-avatar">C</span>
-    <span class="profile-text">Company</span>
-  </a>
-  <a class="nav-cta" href="/export/digest" download="weekly-digest.json">Export digest</a>
-</div>
-{% endblock %}
+{% block top_actions %}{% endblock %}
 
 {% block content %}
 <section class="hero" id="overview">

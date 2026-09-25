@@ -118,17 +118,27 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 16px;
     flex: 1 1 auto;
     min-width: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0 auto;
   }
 
   .shell .nav a {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--muted);
-    padding: 8px 12px;
-    border-radius: 999px;
-    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 8px 10px;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    transition: color 0.2s ease, transform 0.2s ease;
     white-space: nowrap;
     overflow: hidden;
   }
@@ -150,8 +160,8 @@
   .shell .nav a:hover,
   .shell .nav a:focus-visible {
     color: var(--text);
-    background: rgba(95, 224, 255, 0.06);
-    box-shadow: inset 0 0 0 1px rgba(95, 224, 255, 0.09);
+    background: transparent;
+    box-shadow: none;
     transform: translateY(-1px);
   }
 
@@ -939,17 +949,10 @@
 <a href="#product">Product</a>
 <a href="#signals">Signals</a>
 <a href="#pricing">Pricing</a>
-<a href="/dashboard">Dashboard</a>
 {% endblock %}
 
 {% block top_actions %}
-<div class="nav-cluster">
-  <a href="/login" class="profile-badge" data-profile-pill>
-    <span class="profile-avatar">C</span>
-    <span class="profile-text">Company</span>
-  </a>
-  <a href="/dashboard" class="nav-cta">Open dashboard</a>
-</div>
+<a class="nav-cta" href="/dashboard">Dashboard</a>
 {% endblock %}
 
 {% block content %}
@@ -963,7 +966,6 @@
     </p>
 
     <div class="hero-cta">
-      <a class="primary-btn" href="/dashboard">Launch dashboard</a>
       <a class="secondary-btn" href="/docs">View API</a>
     </div>
 

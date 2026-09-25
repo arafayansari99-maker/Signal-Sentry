@@ -16,6 +16,7 @@
     <div id="top" class="{% block shell_class %}page-shell{% endblock %}">
       {% block background_decor %}{% endblock %}
 
+      {% block page_header %}
       <header class="topbar">
         {% block brand %}
         <a href="/" class="brand" aria-label="SignalSentry home">
@@ -34,7 +35,6 @@
           <nav class="nav" aria-label="Main navigation">
             {% block nav_links %}
             <a href="/">Home</a>
-            <a href="/dashboard">Dashboard</a>
             <a href="/docs">API docs</a>
             {% endblock %}
           </nav>
@@ -43,17 +43,10 @@
         </div>
 
         <div class="top-actions">
-          {% block top_actions %}
-          <div class="nav-cluster">
-            <a href="/login" class="profile-badge" data-profile-pill>
-              <span class="profile-avatar">C</span>
-              <span class="profile-text">Company</span>
-            </a>
-            <a href="/login" class="nav-cta">Company login</a>
-          </div>
-          {% endblock %}
+          {% block top_actions %}{% endblock %}
         </div>
       </header>
+      {% endblock %}
 
       <main>
         {% block content %}{% endblock %}
@@ -71,44 +64,28 @@
         const profilePills = document.querySelectorAll('[data-profile-pill]');
 
         const renderProfilePill = () => {
-          const storedUser = localStorage.getItem('signal_sentry_user');
-          const token = localStorage.getItem('signal_sentry_token');
           const pills = document.querySelectorAll('[data-profile-pill]');
-
-          const safeDecode = (jwt) => {
-            if (!jwt || !jwt.includes('.')) return null;
-            try {
-              const payload = jwt.split('.')[1];
-              const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-              const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-              return JSON.parse(atob(padded));
-            } catch {
-              return null;
-            }
-          };
-
-          const decoded = token ? safeDecode(token) : null;
-          const user = storedUser ? JSON.parse(storedUser) : null;
 
           pills.forEach((pill) => {
             const avatar = pill.querySelector('.profile-avatar');
             const text = pill.querySelector('.profile-text');
-            const companyName = user?.company_name || decoded?.company_name || 'Company';
-            const initial = (companyName || 'C').trim().charAt(0).toUpperCase();
 
-            if (avatar) avatar.textContent = initial;
-            if (text) text.textContent = companyName;
+            if (avatar) avatar.textContent = 'D';
+            if (text) text.textContent = '';
 
             pill.setAttribute('href', '/dashboard');
-            pill.setAttribute('title', 'Open company workspace');
-            pill.classList.toggle('is-authenticated', Boolean(token));
+            pill.setAttribute('title', 'Dashboard');
+            pill.classList.toggle('is-authenticated', false);
           });
         };
 
         renderProfilePill();
 
         if (actionHost && mobileActions && !mobileActions.innerHTML.trim()) {
-          mobileActions.innerHTML = actionHost.innerHTML;
+          const actionMarkup = actionHost.innerHTML.trim();
+          if (actionMarkup && !actionMarkup.includes('href="/dashboard"')) {
+            mobileActions.innerHTML = actionMarkup;
+          }
           renderProfilePill();
         }
 

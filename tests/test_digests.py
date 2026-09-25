@@ -17,7 +17,11 @@ def client():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     with SessionLocal() as db:
-        yield TestClient(app), db
+        test_client = TestClient(app)
+        from tests.auth_helpers import ensure_authenticated
+
+        ensure_authenticated(test_client)
+        yield test_client, db
     Base.metadata.drop_all(bind=engine)
 
 

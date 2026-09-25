@@ -140,8 +140,12 @@ async function loadMetrics() {
   }
 }
 
+function authedFetch(url, options = {}) {
+  return fetch(url, options);
+}
+
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const response = await authedFetch(url);
   if (!response.ok) {
     let detail = `Request failed (${response.status})`;
     try {
@@ -247,7 +251,7 @@ function escapeHtml(value) {
 async function sendFeedback(changeItemId, label, feedbackButtons) {
   feedbackButtons.forEach((button) => { button.disabled = true; });
   try {
-    const response = await fetch(`/change-items/${changeItemId}/feedback`, {
+    const response = await authedFetch(`/change-items/${changeItemId}/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label })
@@ -589,7 +593,7 @@ competitorForm?.addEventListener('submit', async (event) => {
   };
 
   try {
-    const response = await fetch('/competitors', {
+    const response = await authedFetch('/competitors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -641,7 +645,7 @@ trackedUrlForm?.addEventListener('submit', async (event) => {
   };
 
   try {
-    const response = await fetch(`/competitors/${compId}/tracked-urls`, {
+    const response = await authedFetch(`/competitors/${compId}/tracked-urls`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -741,7 +745,7 @@ document.getElementById('run-cycle-btn')?.addEventListener('click', async () => 
   }
 
   try {
-    const response = await fetch('/workers/run-cycle', {
+    const response = await authedFetch('/workers/run-cycle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({})

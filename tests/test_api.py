@@ -13,6 +13,12 @@ from app.services.scraping import fetch_page_text
 
 client = TestClient(app)
 
+from tests.auth_helpers import ensure_authenticated
+
+# The auth gate protects every non-public route; stamp a Bearer token once so
+# the whole module's client calls pass.
+ensure_authenticated(client)
+
 
 def test_scraper_and_alert_helpers():
     text = fetch_page_text(
@@ -229,6 +235,64 @@ def test_company_auth_signup_and_login():
     assert login.status_code == 200, login.text
     assert login.json()["company_name"] == "Northstar Labs"
     assert "token" in login.json()
+
+
+def test_auth_gate_redirects_anonymous_page_requests_to_login():
+    browser = TestClient(app)  # fresh client: no Bearer header, no session
+    response = browser.get("/dashboard", headers={"accept": "text/html"}, follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/login?next=")
+    assert "/dashboard" in response.headers["location"]
+
+    login_page = browser.get("/login")
+    assert login_page.status_code == 200
+    assert "login" in login_page.text.lower()
+
+
+def test_auth_gate_returns_401_for_anonymous_api_requests():
+    anonymous = TestClient(app)
+    response = anonymous.get("/competitors")
+    assert response.status_code == 401
+    assert "detail" in response.json()
+    assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_session_cookie_from_signup_grants_page_and_api_access():
+    fresh = TestClient(app)
+    signup = fresh.post(
+        "/auth/signup",
+        json={
+            "company_name": "Cookie Co",
+            "full_name": "Cookie Monster",
+            "email": f"cookie-{uuid.uuid4().hex[:8]}@signalsentry.test",
+            "password": "CookiePass123!",
+        },
+    )
+    assert signup.status_code == 200, signup.text
+    assert "signal_sentry_session" in fresh.cookies
+
+    page = fresh.get("/dashboard", follow_redirects=False)
+    assert page.status_code == 200, "HttpOnly session cookie authenticates page requests"
+
+    api = fresh.get("/competitors")
+    assert api.status_code == 200, "same session cookie authenticates API requests"
+
+
+def test_logout_clears_session_and_relocks_the_gate():
+    member = TestClient(app)
+    member.post(
+        "/auth/signup",
+        json={
+            "company_name": "Logout Co",
+            "full_name": "Log Out",
+            "email": f"logout-{uuid.uuid4().hex[:8]}@signalsentry.test",
+            "password": "LogoutPass123!",
+        },
+    )
+    assert member.get("/dashboard", headers={"accept": "text/html"}, follow_redirects=False).status_code == 200
+
+    member.post("/auth/logout")
+    assert member.get("/dashboard", headers={"accept": "text/html"}, follow_redirects=False).status_code == 303
 
 
 def test_monitoring_cycle_runs_for_all_competitors():

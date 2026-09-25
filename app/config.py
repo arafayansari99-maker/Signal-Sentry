@@ -7,8 +7,6 @@ class Settings(BaseSettings):
     app_name: str = "competitive-intelligence-agent"
     environment: str = "development"
     database_url: str = "sqlite:///./competitive_intelligence.db"
-    jwt_secret_key: str = "signalsentry-company-auth-secret"
-    jwt_algorithm: str = "HS256"
     redis_url: str = "redis://localhost:6379/0"
     redis_queue_name: str = "monitoring"
     background_queue_enabled: bool = True

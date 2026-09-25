@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func
@@ -11,7 +11,6 @@ from starlette.requests import Request
 from sqlalchemy import select
 from pydantic import BaseModel
 
-from app.auth import create_access_token, get_current_account, hash_password, verify_password
 from app.config import get_settings
 from app.db import SessionLocal, init_db
 from app.metrics import router as metrics_router
@@ -39,18 +38,6 @@ BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
-class CompanySignupRequest(BaseModel):
-    company_name: str
-    full_name: str
-    email: str
-    password: str
-
-
-class CompanyLoginRequest(BaseModel):
-    email: str
-    password: str
-
-
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     start_scheduler()
@@ -73,84 +60,12 @@ def landing_page(request: Request) -> HTMLResponse:
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="dashboard.html")
-
-
-@app.get("/login", response_class=HTMLResponse)
-def login_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="auth.html", context={"mode": "login"})
-
-
-@app.get("/signup", response_class=HTMLResponse)
-def signup_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="auth.html", context={"mode": "signup"})
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={})
 
 
 @app.get("/ui", response_class=HTMLResponse)
 def ui_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request=request, name="ui.html")
-
-
-@app.post("/auth/signup")
-def company_signup(payload: CompanySignupRequest) -> dict:
-    with SessionLocal() as db:
-        normalized_email = str(payload.email).lower().strip()
-        existing = db.execute(select(CompanyAccount).where(CompanyAccount.email == normalized_email)).scalar_one_or_none()
-        if existing is not None:
-            raise HTTPException(status_code=409, detail="An account already exists for this email.")
-
-        account = CompanyAccount(
-            company_name=payload.company_name.strip(),
-            full_name=payload.full_name.strip(),
-            email=normalized_email,
-            password_hash=hash_password(payload.password),
-            role="company_admin",
-        )
-        db.add(account)
-        db.commit()
-        db.refresh(account)
-
-        token = create_access_token(account)
-        return {
-            "id": account.id,
-            "company_name": account.company_name,
-            "full_name": account.full_name,
-            "email": account.email,
-            "role": account.role,
-            "token": token,
-        }
-
-
-@app.post("/auth/login")
-def company_login(payload: CompanyLoginRequest) -> dict:
-    with SessionLocal() as db:
-        normalized_email = str(payload.email).lower().strip()
-        account = db.execute(select(CompanyAccount).where(CompanyAccount.email == normalized_email)).scalar_one_or_none()
-        if account is None:
-            raise HTTPException(status_code=401, detail="Invalid email or password.")
-        if not verify_password(payload.password, account.password_hash):
-            raise HTTPException(status_code=401, detail="Invalid email or password.")
-
-        token = create_access_token(account)
-        return {
-            "id": account.id,
-            "company_name": account.company_name,
-            "full_name": account.full_name,
-            "email": account.email,
-            "role": account.role,
-            "token": token,
-        }
-
-
-@app.get("/auth/me")
-def auth_me(current_account: CompanyAccount = Depends(get_current_account)) -> dict:
-    return {
-        "id": current_account.id,
-        "company_name": current_account.company_name,
-        "full_name": current_account.full_name,
-        "email": current_account.email,
-        "role": current_account.role,
-    }
 
 
 @app.get("/health")

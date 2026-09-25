@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SignalSentry dashboard for monitoring competitor pricing and product changes." />
+    <title>SignalSentry Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #09131d;
+        --bg-soft: #101d2a;
+        --panel: rgba(15, 23, 42, 0.8);
+        --panel-strong: rgba(11, 18, 27, 0.9);
+        --card: rgba(13, 21, 32, 0.86);
+        --line: rgba(148, 163, 184, 0.14);
+        --text: #edf7ff;
+        --muted: #a9bfd6;
+        --primary: #73e5ff;
+        --secondary: #7c87ff;
+        --success: #8df0ba;
+        --warning: #ffd983;
+        --danger: #ff8a9d;
+        --shadow: 0 28px 60px rgba(5, 9, 15, 0.5);
+        --input: rgba(15, 23, 42, 0.9);
+      }
+
+      html[data-theme='light'] {
+        --bg: #edf5ff;
+        --bg-soft: #e6eef9;
+        --panel: rgba(255, 255, 255, 0.78);
+        --panel-strong: rgba(255, 255, 255, 0.95);
+        --card: rgba(255, 255, 255, 0.86);
+        --line: rgba(74, 96, 132, 0.12);
+        --text: #122333;
+        --muted: #47607d;
+        --primary: #0e8ec7;
+        --secondary: #5046d9;
+        --success: #1b9c66;
+        --warning: #b77d00;
+        --danger: #cc3d5e;
+        --shadow: 0 18px 38px rgba(85, 109, 140, 0.18);
+        --input: rgba(240, 247, 255, 0.9);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Inter", sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at top, rgba(124, 135, 255, 0.18), transparent 28%), radial-gradient(circle at left, rgba(115, 229, 255, 0.16), transparent 28%), var(--bg);
+      }
+
+      a { text-decoration: none; color: inherit; }
+      button, input, select { font: inherit; }
+      h1, h2, h3 { margin: 0; }
+
+      .app-shell {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 20px 18px 48px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: rgba(10, 17, 27, 0.55);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--shadow);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-mark {
+        position: relative;
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(115, 229, 255, 0.3), rgba(124, 135, 255, 0.7));
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+
+      .brand-mark::before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-radius: 7px;
+        background: linear-gradient(135deg, var(--primary), #dffcff);
+        top: 12px;
+        left: 12px;
+        transform: rotate(45deg);
+      }
+
+      .brand-name {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .nav a {
+        color: var(--muted);
+        padding: 8px 12px;
+        border-radius: 999px;
+      }
+
+      .nav a:hover {
+        background: rgba(148, 163, 184, 0.08);
+        color: var(--text);
+      }
+
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .theme-btn, .primary-btn {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.06);
+        color: var(--text);
+        cursor: pointer;
+        padding: 10px 16px;
+      }
+
+      .primary-btn {
+        background: linear-gradient(135deg, var(--primary), #bfeeff 34%, #b3b7ff 100%);
+        color: #07131d;
+        font-weight: 800;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 20px;
+        margin-top: 26px;
+      }
+
+      .hero-panel,
+      .panel,
+      .mini-card,
+      .chart-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero-panel {
+        padding: 26px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(115, 229, 255, 0.08);
+        color: var(--primary);
+        border: 1px solid rgba(115, 229, 255, 0.18);
+        letter-spacing: 0.12em;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      .hero h1 {
+        margin-top: 16px;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: clamp(2.4rem, 4vw, 4rem);
+        line-height: 0.96;
+        letter-spacing: -0.06em;
+      }
+
+      .hero p {
+        color: var(--muted);
+        line-height: 1.8;
+        margin: 18px 0 0;
+        max-width: 620px;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 22px;
+        flex-wrap: wrap;
+      }
+
+      .metrics-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .metric {
+        background: rgba(148, 163, 184, 0.04);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px 14px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.68rem;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 8px;
+        font-size: clamp(1.5rem, 3vw, 2.4rem);
+        letter-spacing: -0.06em;
+      }
+
+      .hero-card {
+        padding: 20px;
+      }
+
+      .signal-boxes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .mini-box {
+        background: rgba(148, 163, 184, 0.05);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px 12px;
+      }
+
+      .mini-box .label {
+        color: var(--muted);
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .mini-box strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.5rem;
+      }
+
+      .chart-card {
+        padding: 18px;
+        margin-top: 18px;
+      }
+
+      .chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .chart-header span {
+        color: var(--muted);
+      }
+
+      canvas {
+        display: block;
+        width: 100%;
+        height: 170px;
+        border-radius: 16px;
+        background: rgba(148, 163, 184, 0.03);
+      }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 20px;
+        margin-top: 24px;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .panel-header h2 {
+        font-size: 1.18rem;
+      }
+
+      .subtle-label {
+        color: var(--muted);
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .form-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field label {
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      .field input,
+      .field select {
+        width: 100%;
+        border: 1px solid var(--line);
+        background: var(--input);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 12px 14px;
+        outline: none;
+      }
+
+      .field input:focus,
+      .field select:focus {
+        border-color: rgba(115, 229, 255, 0.6);
+        box-shadow: 0 0 0 4px rgba(115, 229, 255, 0.08);
+      }
+
+      .submit-btn {
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--primary), #dffcff 35%, #b2b7ff 100%);
+        color: #07131d;
+        font-weight: 800;
+        padding: 12px 14px;
+        cursor: pointer;
+      }
+
+      .mini-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .mini-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 14px;
+      }
+
+      .mini-title {
+        font-weight: 700;
+      }
+
+      .mini-sub {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin-top: 4px;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+
+      .status-pill.ok {
+        background: rgba(141, 240, 186, 0.12);
+        color: var(--success);
+      }
+
+      .status-pill.warn {
+        background: rgba(255, 217, 131, 0.12);
+        color: var(--warning);
+      }
+
+      .alert-feed {
+        display: grid;
+        gap: 12px;
+      }
+
+      .alert-item {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(148, 163, 184, 0.04);
+        padding: 12px 14px;
+      }
+
+      .alert-title {
+        font-weight: 700;
+      }
+
+      .alert-text {
+        color: var(--muted);
+        margin-top: 4px;
+        font-size: 0.84rem;
+        line-height: 1.5;
+      }
+
+      .alert-tag {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 8px;
+        border-radius: 999px;
+        background: rgba(124, 135, 255, 0.1);
+        color: var(--secondary);
+        min-width: 82px;
+        font-size: 0.68rem;
+        text-transform: capitalize;
+      }
+
+      .alert-item.product { border-color: rgba(115, 229, 255, 0.18); }
+      .alert-item.pricing { border-color: rgba(255, 138, 157, 0.2); }
+      .alert-item.hiring { border-color: rgba(141, 240, 186, 0.2); }
+
+      .monitoring-widget {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(115, 229, 255, 0.08);
+        border: 1px solid rgba(115, 229, 255, 0.18);
+        color: var(--text);
+      }
+
+      .monitoring-widget span {
+        color: var(--muted);
+      }
+
+      .live-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 10px rgba(141, 240, 186, 0.8);
+      }
+
+      @media (max-width: 980px) {
+        .hero, .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .app-shell { padding: 14px 12px 28px; }
+        .topbar {
+          flex-wrap: wrap;
+          justify-content: center;
+          border-radius: 18px;
+        }
+        .nav {
+          width: 100%;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+        .top-actions {
+          width: 100%;
+          justify-content: center;
+        }
+        .metrics-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-label="SignalSentry logo"></div>
+          <div class="brand-name">SignalSentry</div>
+        </div>
+
+        <nav class="nav" aria-label="Main navigation">
+          <a href="#overview">Overview</a>
+          <a href="#watchlist">Watchlist</a>
+          <a href="#alerts">Alerts</a>
+        </nav>
+
+        <div class="top-actions">
+          <button id="theme-toggle" class="theme-btn" type="button">☀ Light</button>
+          <button class="primary-btn" type="button">Export</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="hero" id="overview">
+          <div class="hero-panel">
+            <div class="eyebrow">Signal engine</div>
+            <h1>Monitor the market before it moves.</h1>
+            <p>
+              SignalSentry continuously watches competitor pricing, product positioning, and hiring updates.
+              Smart filtering prioritizes what matters so your team gets clear, high-confidence alerts.
+            </p>
+
+            <div class="hero-actions">
+              <button class="primary-btn" type="button">Run cycle</button>
+              <button class="theme-btn" type="button">View digest</button>
+            </div>
+
+            <div class="metrics-row">
+              <div class="metric">
+                <div class="metric-label">Competitors</div>
+                <strong id="metric-competitors">0</strong>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Alerts</div>
+                <strong id="metric-alerts">0</strong>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Coverage</div>
+                <strong id="metric-coverage">92%</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-panel hero-card">
+            <div class="subtle-label">Monitoring status</div>
+            <div class="monitoring-widget" style="margin-top: 14px;">
+              <span>Background worker</span>
+              <div class="live-indicator"><span class="live-dot"></span> <strong id="worker-status">Live</strong></div>
+            </div>
+
+            <div class="signal-boxes">
+              <div class="mini-box">
+                <div class="label">Pricing</div>
+                <strong>14</strong>
+              </div>
+              <div class="mini-box">
+                <div class="label">Product</div>
+                <strong>09</strong>
+              </div>
+              <div class="mini-box">
+                <div class="label">Hiring</div>
+                <strong>07</strong>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-header">
+                <strong>Signal trend</strong>
+                <span>last 12 cycles</span>
+              </div>
+              <canvas id="trend-chart" width="400" height="170"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <section class="dashboard-grid">
+          <div class="panel" id="watchlist">
+            <div class="panel-header">
+              <div>
+                <div class="subtle-label">Add competitor</div>
+                <h2>Competitor registry</h2>
+              </div>
+            </div>
+
+            <form id="competitor-form" class="form-grid">
+              <div class="field">
+                <label for="competitor-name">Competitor name</label>
+                <input id="competitor-name" name="name" type="text" placeholder="Acme" required />
+              </div>
+
+              <div class="field">
+                <label for="competitor-domain">Competitor domain</label>
+                <input id="competitor-domain" name="domain" type="text" placeholder="acme.com" required />
+              </div>
+
+              <button class="submit-btn" type="submit">Add competitor</button>
+            </form>
+
+            <div class="panel-header" style="margin-top: 22px; margin-bottom: 12px;">
+              <div>
+                <div class="subtle-label">Active</div>
+                <h2>Tracked accounts</h2>
+              </div>
+            </div>
+
+            <div id="competitor-cards" class="mini-grid"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="subtle-label">Add URL</div>
+                <h2>Tracked pages</h2>
+              </div>
+            </div>
+
+            <form id="tracked-url-form" class="form-grid">
+              <div class="field">
+                <label for="competitor-select">Competitor</label>
+                <select id="competitor-select" name="competitor_id" required>
+                  <option value="">Select competitor</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="url-input">URL</label>
+                <input id="url-input" name="url" type="url" placeholder="https://vendor.com/pricing" required />
+              </div>
+
+              <div class="field">
+                <label for="page-type">Page type</label>
+                <select id="page-type" name="page_type">
+                  <option value="pricing">Pricing</option>
+                  <option value="product">Product</option>
+                  <option value="careers">Careers</option>
+                  <option value="messaging">Messaging</option>
+                </select>
+              </div>
+
+              <button class="submit-btn" type="submit">Add tracked URL</button>
+            </form>
+
+            <div class="panel-header" style="margin-top: 22px; margin-bottom: 12px;">
+              <div>
+                <div class="subtle-label">Digest</div>
+                <h2>Recent alerts</h2>
+              </div>
+            </div>
+
+            <div id="digest-feed" class="alert-feed"></div>
+          </div>
+        </section>
+
+        <section class="panel" style="margin-top: 20px;">
+          <div class="panel-header">
+            <div>
+              <div class="subtle-label">Queue monitor</div>
+              <h2>Monitoring job status</h2>
+            </div>
+          </div>
+
+          <div class="metrics-row" style="margin-top: 6px; margin-bottom: 14px;">
+            <div class="metric">
+              <div class="metric-label">Queued</div>
+              <strong id="queue-queued">0</strong>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Started</div>
+              <strong id="queue-started">0</strong>
+            </div>
+            <div class="metric">
+              <div class="metric-label">Failed</div>
+              <strong id="queue-failed">0</strong>
+            </div>
+          </div>
+
+          <div id="queue-monitor" class="alert-feed"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/ui-static/dashboard.js"></script>
+  </body>
+</html>

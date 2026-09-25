@@ -32,3 +32,8 @@ class ChangeItemSummary(BaseModel):
     why_it_matters: str
     confidence: float
     status: str = "pending"
+
+
+class FeedbackCreate(BaseModel):
+    label: str
+    user_id: str | None = None

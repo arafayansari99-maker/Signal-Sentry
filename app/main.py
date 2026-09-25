@@ -2,15 +2,32 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import func
+from fastapi.templating import Jinja2Templates
+from starlette.requests import Request
 from sqlalchemy import select
+from pydantic import BaseModel
 
+from app.auth import create_access_token, get_current_account, hash_password, verify_password
 from app.config import get_settings
 from app.db import SessionLocal, init_db
-from app.models import ChangeItem, Competitor, Diff, Snapshot, TrackedUrl
-from app.schemas import CompetitorCreate, CompetitorRead
+from app.metrics import router as metrics_router
+from app.models import (
+    ChangeItem,
+    CompanyAccount,
+    Competitor,
+    Digest,
+    DigestItem,
+    Diff,
+    Feedback,
+    Snapshot,
+    TrackedUrl,
+)
+from app.schemas import CompetitorCreate, CompetitorRead, FeedbackCreate
+from app.services.digests import generate_weekly_digest
 from app.services.diffing import build_change_summary
 from app.services.discovery import discover_urls
 from app.workers.pipeline import run_monitoring_cycle
@@ -19,6 +36,19 @@ from app.queue import enqueue_monitoring_cycle, get_queue_status
 
 settings = get_settings()
 BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+class CompanySignupRequest(BaseModel):
+    company_name: str
+    full_name: str
+    email: str
+    password: str
+
+
+class CompanyLoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 @asynccontextmanager
@@ -32,25 +62,95 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
 app.mount("/ui-static", StaticFiles(directory=BASE_DIR / "static"), name="ui_static")
+app.include_router(metrics_router)
 init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
-def landing_page() -> HTMLResponse:
-    html_path = BASE_DIR / "templates" / "landing.html"
-    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+def landing_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="landing.html")
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard_page() -> HTMLResponse:
-    html_path = BASE_DIR / "templates" / "dashboard.html"
-    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+def dashboard_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="dashboard.html")
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="auth.html", context={"mode": "login"})
+
+
+@app.get("/signup", response_class=HTMLResponse)
+def signup_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="auth.html", context={"mode": "signup"})
 
 
 @app.get("/ui", response_class=HTMLResponse)
-def ui_page() -> HTMLResponse:
-    html_path = BASE_DIR / "templates" / "ui.html"
-    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+def ui_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="ui.html")
+
+
+@app.post("/auth/signup")
+def company_signup(payload: CompanySignupRequest) -> dict:
+    with SessionLocal() as db:
+        normalized_email = str(payload.email).lower().strip()
+        existing = db.execute(select(CompanyAccount).where(CompanyAccount.email == normalized_email)).scalar_one_or_none()
+        if existing is not None:
+            raise HTTPException(status_code=409, detail="An account already exists for this email.")
+
+        account = CompanyAccount(
+            company_name=payload.company_name.strip(),
+            full_name=payload.full_name.strip(),
+            email=normalized_email,
+            password_hash=hash_password(payload.password),
+            role="company_admin",
+        )
+        db.add(account)
+        db.commit()
+        db.refresh(account)
+
+        token = create_access_token(account)
+        return {
+            "id": account.id,
+            "company_name": account.company_name,
+            "full_name": account.full_name,
+            "email": account.email,
+            "role": account.role,
+            "token": token,
+        }
+
+
+@app.post("/auth/login")
+def company_login(payload: CompanyLoginRequest) -> dict:
+    with SessionLocal() as db:
+        normalized_email = str(payload.email).lower().strip()
+        account = db.execute(select(CompanyAccount).where(CompanyAccount.email == normalized_email)).scalar_one_or_none()
+        if account is None:
+            raise HTTPException(status_code=401, detail="Invalid email or password.")
+        if not verify_password(payload.password, account.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid email or password.")
+
+        token = create_access_token(account)
+        return {
+            "id": account.id,
+            "company_name": account.company_name,
+            "full_name": account.full_name,
+            "email": account.email,
+            "role": account.role,
+            "token": token,
+        }
+
+
+@app.get("/auth/me")
+def auth_me(current_account: CompanyAccount = Depends(get_current_account)) -> dict:
+    return {
+        "id": current_account.id,
+        "company_name": current_account.company_name,
+        "full_name": current_account.full_name,
+        "email": current_account.email,
+        "role": current_account.role,
+    }
 
 
 @app.get("/health")
@@ -61,6 +161,37 @@ def healthcheck() -> dict[str, str]:
 @app.get("/api")
 def root() -> dict[str, str]:
     return {"message": "Competitive Intelligence Agent is running."}
+
+
+@app.get("/export/competitors")
+def export_competitors() -> JSONResponse:
+    payload = list_competitors()
+    return JSONResponse(
+        content=[item.model_dump(mode="json") for item in payload],
+        headers={"Content-Disposition": "attachment; filename=competitors.json"},
+        media_type="application/json",
+    )
+
+
+@app.get("/export/digest")
+def export_digest() -> JSONResponse:
+    try:
+        payload = get_weekly_digest()
+    except HTTPException:
+        payload = {
+            "digest_id": None,
+            "period_start": None,
+            "period_end": None,
+            "sent_at": None,
+            "summary": "No digest generated yet.",
+            "digest_items": [],
+        }
+
+    return JSONResponse(
+        content=payload,
+        headers={"Content-Disposition": "attachment; filename=weekly-digest.json"},
+        media_type="application/json",
+    )
 
 
 @app.get("/competitors", response_model=list[CompetitorRead])
@@ -273,34 +404,208 @@ def get_competitor_digest(competitor_id: int) -> dict:
         }
 
 
+@app.post("/digests/weekly")
+def post_weekly_digest(payload: dict | None = None) -> dict:
+    candidate = payload or {}
+    send = bool(candidate.get("send", False))
+    with SessionLocal() as db:
+        return generate_weekly_digest(db, send=send)
+
+
 @app.get("/digests/weekly")
 def get_weekly_digest() -> dict:
+    """Return the most recent persisted weekly digest, with items ranked."""
     with SessionLocal() as db:
-        rows = (
-            db.execute(
-                select(Competitor.name, TrackedUrl.url, ChangeItem.category, ChangeItem.summary, ChangeItem.confidence)
-                .join(TrackedUrl, TrackedUrl.competitor_id == Competitor.id)
-                .join(Diff, Diff.tracked_url_id == TrackedUrl.id)
-                .join(ChangeItem, ChangeItem.diff_id == Diff.id)
-                .order_by(ChangeItem.confidence.desc())
-            )
-            .all()
-        )
+        digest = db.scalar(select(Digest).order_by(Digest.id.desc()).limit(1))
+        if digest is None:
+            raise HTTPException(status_code=404, detail="No weekly digest generated yet; POST /digests/weekly first")
+
+        rows = db.execute(
+            select(DigestItem, ChangeItem, Competitor, TrackedUrl)
+            .join(ChangeItem, ChangeItem.id == DigestItem.change_item_id)
+            .join(Diff, Diff.id == ChangeItem.diff_id)
+            .join(TrackedUrl, TrackedUrl.id == Diff.tracked_url_id)
+            .join(Competitor, Competitor.id == TrackedUrl.competitor_id)
+            .where(DigestItem.digest_id == digest.id)
+            .order_by(DigestItem.rank.asc())
+        ).all()
 
         digest_items = [
             {
-                "competitor_name": competitor_name,
-                "url": url,
-                "category": category,
-                "summary": summary,
-                "confidence": confidence,
+                "rank": digest_item.rank,
+                "change_item_id": change_item.id,
+                "competitor_name": competitor.name,
+                "url": tracked_url.url,
+                "category": change_item.category,
+                "magnitude": change_item.magnitude,
+                "summary": change_item.summary,
+                "confidence": change_item.confidence,
             }
-            for competitor_name, url, category, summary, confidence in rows
+            for digest_item, change_item, competitor, tracked_url in rows
         ]
 
         return {
-            "summary": f"{len(digest_items)} change items surfaced this week.",
+            "digest_id": digest.id,
+            "period_start": digest.period_start.isoformat(),
+            "period_end": digest.period_end.isoformat(),
+            "sent_at": digest.sent_at.isoformat() if digest.sent_at else None,
+            "summary": f"{len(digest_items)} change items in this digest.",
             "digest_items": digest_items,
+        }
+
+
+@app.get("/digests")
+def list_digests() -> dict:
+    with SessionLocal() as db:
+        rows = db.execute(
+            select(Digest, func.count(DigestItem.id))
+            .outerjoin(DigestItem, DigestItem.digest_id == Digest.id)
+            .group_by(Digest.id)
+            .order_by(Digest.id.desc())
+        ).all()
+        return {
+            "digests": [
+                {
+                    "id": digest.id,
+                    "period_start": digest.period_start.isoformat(),
+                    "period_end": digest.period_end.isoformat(),
+                    "sent_at": digest.sent_at.isoformat() if digest.sent_at else None,
+                    "channel": digest.channel,
+                    "item_count": count,
+                }
+                for digest, count in rows
+            ]
+        }
+
+
+@app.post("/change-items/{change_item_id}/feedback")
+def create_feedback(change_item_id: int, payload: FeedbackCreate) -> dict:
+    if payload.label not in {"relevant", "not_relevant"}:
+        raise HTTPException(status_code=422, detail="label must be 'relevant' or 'not_relevant'")
+
+    with SessionLocal() as db:
+        change_item = db.get(ChangeItem, change_item_id)
+        if change_item is None:
+            raise HTTPException(status_code=404, detail="Change item not found")
+
+        feedback = Feedback(
+            change_item_id=change_item.id,
+            user_id=payload.user_id,
+            label=payload.label,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(feedback)
+
+        # PRD FR9: "not relevant" marks the item dismissed so future digests skip it.
+        if payload.label == "not_relevant":
+            change_item.status = "dismissed"
+
+        db.commit()
+        db.refresh(feedback)
+        return {
+            "id": feedback.id,
+            "change_item_id": feedback.change_item_id,
+            "label": feedback.label,
+            "user_id": feedback.user_id,
+            "change_item_status": change_item.status,
+        }
+
+
+@app.get("/change-items/{change_item_id}/evidence")
+def get_change_item_evidence(change_item_id: int) -> dict:
+    """Evidence view for a change item (PRD FR8).
+
+    Returns the full before/after snapshot text behind the claim, the changed
+    tokens the diff engine surfaced, and screenshot references when present,
+    so every digest claim is traceable to stored raw snapshots.
+    """
+    with SessionLocal() as db:
+        change_item = db.get(ChangeItem, change_item_id)
+        if change_item is None:
+            raise HTTPException(status_code=404, detail="Change item not found")
+
+        diff = db.get(Diff, change_item.diff_id)
+        tracked_url = db.get(TrackedUrl, diff.tracked_url_id)
+        competitor = db.get(Competitor, tracked_url.competitor_id)
+        before_snapshot = db.get(Snapshot, diff.snapshot_before_id) if diff.snapshot_before_id else None
+        after_snapshot = db.get(Snapshot, diff.snapshot_after_id)
+
+        from app.services.diffing import summarize_changed_tokens
+
+        changed_tokens = summarize_changed_tokens(
+            before_snapshot.text_content if before_snapshot else "",
+            after_snapshot.text_content if after_snapshot else "",
+        )
+
+        return {
+            "change_item_id": change_item.id,
+            "status": change_item.status,
+            "category": change_item.category,
+            "magnitude": change_item.magnitude,
+            "summary": change_item.summary,
+            "why_it_matters": change_item.why_it_matters,
+            "confidence": change_item.confidence,
+            "competitor": {
+                "id": competitor.id,
+                "name": competitor.name,
+                "domain": competitor.domain,
+            },
+            "tracked_url": {
+                "id": tracked_url.id,
+                "url": tracked_url.url,
+                "page_type": tracked_url.page_type,
+            },
+            "diff": {
+                "id": diff.id,
+                "material_change": diff.passed_filter,
+                "stage1_score": diff.stage1_score,
+                "changed_tokens": changed_tokens[:20],
+            },
+            "before": (
+                {
+                    "snapshot_id": before_snapshot.id,
+                    "fetched_at": before_snapshot.fetched_at.isoformat() if before_snapshot.fetched_at else None,
+                    "text_content": before_snapshot.text_content,
+                    "screenshot_url": before_snapshot.screenshot_url,
+                }
+                if before_snapshot
+                else None
+            ),
+            "after": (
+                {
+                    "snapshot_id": after_snapshot.id,
+                    "fetched_at": after_snapshot.fetched_at.isoformat() if after_snapshot.fetched_at else None,
+                    "text_content": after_snapshot.text_content,
+                    "screenshot_url": after_snapshot.screenshot_url,
+                }
+                if after_snapshot
+                else None
+            ),
+        }
+
+
+@app.get("/change-items/{change_item_id}/feedback")
+def list_feedback(change_item_id: int) -> dict:
+    with SessionLocal() as db:
+        change_item = db.get(ChangeItem, change_item_id)
+        if change_item is None:
+            raise HTTPException(status_code=404, detail="Change item not found")
+
+        rows = db.scalars(
+            select(Feedback).where(Feedback.change_item_id == change_item_id).order_by(Feedback.id)
+        ).all()
+        return {
+            "change_item_id": change_item_id,
+            "change_item_status": change_item.status,
+            "feedback": [
+                {
+                    "id": row.id,
+                    "label": row.label,
+                    "user_id": row.user_id,
+                    "created_at": row.created_at.isoformat(),
+                }
+                for row in rows
+            ],
         }
 
 

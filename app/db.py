@@ -18,7 +18,17 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 
 def init_db() -> None:
-    from app.models import Competitor, Diff, Snapshot, TrackedUrl, ChangeItem, Digest, DigestItem, Feedback
+    from app.models import (
+        CompanyAccount,
+        Competitor,
+        Diff,
+        Snapshot,
+        TrackedUrl,
+        ChangeItem,
+        Digest,
+        DigestItem,
+        Feedback,
+    )
 
     Base.metadata.create_all(bind=engine)
 

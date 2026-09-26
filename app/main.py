@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func
 from fastapi.templating import Jinja2Templates
@@ -15,6 +15,14 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.db import SessionLocal, init_db
+from app.demo import (
+    DEMO_COMPETITORS,
+    DEMO_DIGEST_ITEMS,
+    DEMO_TRACKED_URLS,
+    demo_digest,
+    demo_evidence,
+    demo_metrics,
+)
 from app.metrics import router as metrics_router
 from app.models import (
     ChangeItem,
@@ -42,7 +50,11 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    should_start_scheduler = settings.background_queue_enabled and not os.getenv("VERCEL")
+    should_start_scheduler = (
+        settings.background_queue_enabled
+        and not settings.demo_mode
+        and not os.getenv("VERCEL")
+    )
     if should_start_scheduler:
         start_scheduler()
     try:
@@ -66,17 +78,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.mount("/ui-static", StaticFiles(directory=BASE_DIR / "static"), name="ui_static")
-app.include_router(metrics_router)
-init_db()
+if settings.demo_mode:
+    @app.get("/metrics/overview")
+    def demo_metrics_overview() -> dict:
+        return demo_metrics()
+
+    @app.get("/metrics/trend")
+    def demo_metrics_trend(days: int = 12) -> dict:
+        if days < 1 or days > 90:
+            raise HTTPException(status_code=422, detail="days must be between 1 and 90")
+        return {"days": days, "trend": demo_metrics(days=days)["trend"]}
+else:
+    app.include_router(metrics_router)
+    init_db()
 
 
 @app.get("/", response_class=HTMLResponse)
-def landing_page(request: Request) -> HTMLResponse:
+def landing_page(request: Request) -> Response:
+    if settings.api_only_mode:
+        return JSONResponse(
+            {
+                "service": settings.app_name,
+                "status": "ok",
+                "docs": "/docs",
+                "health": "/health",
+            }
+        )
     return templates.TemplateResponse(request=request, name="landing.html")
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
-def dashboard_page(request: Request) -> HTMLResponse:
+def dashboard_page(request: Request) -> Response:
+    if settings.api_only_mode:
+        return JSONResponse({"message": "The dashboard UI is served by the frontend project."})
+    return templates.TemplateResponse(request=request, name="dashboard.html", context={})
+
+
+@app.get("/site/landing", response_class=HTMLResponse)
+def site_landing_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request=request, name="landing.html")
+
+
+@app.get("/site/dashboard", response_class=HTMLResponse)
+def site_dashboard_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(request=request, name="dashboard.html", context={})
 
 
@@ -107,6 +151,13 @@ def export_competitors() -> JSONResponse:
 
 @app.get("/export/digest")
 def export_digest() -> JSONResponse:
+    if settings.demo_mode:
+        return JSONResponse(
+            content=demo_digest(),
+            headers={"Content-Disposition": "attachment; filename=weekly-digest.json"},
+            media_type="application/json",
+        )
+
     try:
         payload = get_weekly_digest()
     except HTTPException:
@@ -128,6 +179,9 @@ def export_digest() -> JSONResponse:
 
 @app.get("/competitors", response_model=list[CompetitorRead])
 def list_competitors() -> list[CompetitorRead]:
+    if settings.demo_mode:
+        return [CompetitorRead.model_validate(item) for item in DEMO_COMPETITORS]
+
     with SessionLocal() as db:
         records = db.scalars(select(Competitor).order_by(Competitor.id)).all()
         return [
@@ -145,6 +199,17 @@ def list_competitors() -> list[CompetitorRead]:
 
 @app.post("/competitors", response_model=CompetitorRead)
 def create_competitor(payload: CompetitorCreate) -> CompetitorRead:
+    if settings.demo_mode:
+        if any(item["domain"] == payload.domain for item in DEMO_COMPETITORS):
+            raise HTTPException(status_code=409, detail="Competitor with this domain already exists")
+        competitor = {
+            "id": max((item["id"] for item in DEMO_COMPETITORS), default=0) + 1,
+            **payload.model_dump(),
+            "created_at": datetime.now(timezone.utc),
+        }
+        DEMO_COMPETITORS.append(competitor)
+        return CompetitorRead.model_validate(competitor)
+
     with SessionLocal() as db:
         existing = db.execute(select(Competitor).where(Competitor.domain == payload.domain)).scalar_one_or_none()
         if existing is not None:
@@ -177,6 +242,17 @@ def discover_competitor(domain: str | None = None, payload: dict | None = None) 
     if not requested_domain:
         return {"domain": "", "candidates": []}
 
+    if settings.demo_mode:
+        normalized_domain = requested_domain.removeprefix("https://").removeprefix("http://").strip("/")
+        return {
+            "domain": normalized_domain,
+            "candidates": [
+                {"url": f"https://{normalized_domain}/pricing", "page_type": "pricing"},
+                {"url": f"https://{normalized_domain}/product", "page_type": "product"},
+                {"url": f"https://{normalized_domain}/careers", "page_type": "careers"},
+            ],
+        }
+
     return {
         "domain": requested_domain,
         "candidates": discover_urls(requested_domain),
@@ -185,6 +261,19 @@ def discover_competitor(domain: str | None = None, payload: dict | None = None) 
 
 @app.post("/competitors/{competitor_id}/tracked-urls")
 def create_tracked_url(competitor_id: int, payload: dict) -> dict:
+    if settings.demo_mode:
+        if not any(item["id"] == competitor_id for item in DEMO_COMPETITORS):
+            raise HTTPException(status_code=404, detail="Competitor not found")
+        tracked_url = {
+            "id": max((item["id"] for item in DEMO_TRACKED_URLS), default=0) + 1,
+            "competitor_id": competitor_id,
+            "url": payload.get("url"),
+            "page_type": payload.get("page_type", "product"),
+            "exclude": bool(payload.get("exclude", False)),
+        }
+        DEMO_TRACKED_URLS.append(tracked_url)
+        return tracked_url
+
     with SessionLocal() as db:
         competitor = db.get(Competitor, competitor_id)
         if competitor is None:
@@ -210,6 +299,17 @@ def create_tracked_url(competitor_id: int, payload: dict) -> dict:
 
 @app.post("/competitors/{competitor_id}/tracked-urls/{tracked_url_id}/snapshots")
 def create_snapshot(competitor_id: int, tracked_url_id: int, payload: dict) -> dict:
+    if settings.demo_mode:
+        if not any(item["id"] == tracked_url_id and item["competitor_id"] == competitor_id for item in DEMO_TRACKED_URLS):
+            raise HTTPException(status_code=404, detail="Tracked URL not found")
+        return {
+            "id": tracked_url_id,
+            "tracked_url_id": tracked_url_id,
+            "text_content": payload.get("text_content", "Demo snapshot captured."),
+            "screenshot_url": payload.get("screenshot_url"),
+            "structured_data": payload.get("structured_data"),
+        }
+
     with SessionLocal() as db:
         competitor = db.get(Competitor, competitor_id)
         if competitor is None:
@@ -240,6 +340,19 @@ def create_snapshot(competitor_id: int, tracked_url_id: int, payload: dict) -> d
 
 @app.post("/competitors/{competitor_id}/tracked-urls/{tracked_url_id}/diffs")
 def create_diff(competitor_id: int, tracked_url_id: int, payload: dict) -> dict:
+    if settings.demo_mode:
+        if not any(item["id"] == tracked_url_id and item["competitor_id"] == competitor_id for item in DEMO_TRACKED_URLS):
+            raise HTTPException(status_code=404, detail="Tracked URL not found")
+        return {
+            "id": tracked_url_id,
+            "tracked_url_id": tracked_url_id,
+            "category": "product",
+            "material_change": False,
+            "summary": "Demo mode does not run live comparison jobs.",
+            "confidence": 0.0,
+            "change_item_id": None,
+        }
+
     with SessionLocal() as db:
         competitor = db.get(Competitor, competitor_id)
         if competitor is None:
@@ -302,6 +415,20 @@ def create_diff(competitor_id: int, tracked_url_id: int, payload: dict) -> dict:
 
 @app.get("/competitors/{competitor_id}/digest")
 def get_competitor_digest(competitor_id: int) -> dict:
+    if settings.demo_mode:
+        competitor = next((item for item in DEMO_COMPETITORS if item["id"] == competitor_id), None)
+        if competitor is None:
+            raise HTTPException(status_code=404, detail="Competitor not found")
+        return {
+            "competitor_id": competitor_id,
+            "competitor_name": competitor["name"],
+            "highlights": [
+                {"url": item["url"], "category": item["category"], "summary": item["summary"], "confidence": item["confidence"]}
+                for item in DEMO_DIGEST_ITEMS
+                if item["competitor_name"] == competitor["name"]
+            ],
+        }
+
     with SessionLocal() as db:
         competitor = db.get(Competitor, competitor_id)
         if competitor is None:
@@ -338,6 +465,16 @@ def get_competitor_digest(competitor_id: int) -> dict:
 
 @app.post("/digests/weekly")
 def post_weekly_digest(payload: dict | None = None) -> dict:
+    if settings.demo_mode:
+        return {
+            "digest_id": 1,
+            "item_count": len(DEMO_DIGEST_ITEMS),
+            "candidate_count": len(DEMO_DIGEST_ITEMS),
+            "minor_changes_overflow": 0,
+            "delivery": {"status": "skipped", "reason": "Demo mode does not send notifications."},
+            "items": DEMO_DIGEST_ITEMS,
+        }
+
     candidate = payload or {}
     send = bool(candidate.get("send", False))
     with SessionLocal() as db:
@@ -347,6 +484,9 @@ def post_weekly_digest(payload: dict | None = None) -> dict:
 @app.get("/digests/weekly")
 def get_weekly_digest() -> dict:
     """Return the most recent persisted weekly digest, with items ranked."""
+    if settings.demo_mode:
+        return demo_digest()
+
     with SessionLocal() as db:
         digest = db.scalar(select(Digest).order_by(Digest.id.desc()).limit(1))
         if digest is None:
@@ -388,6 +528,19 @@ def get_weekly_digest() -> dict:
 
 @app.get("/digests")
 def list_digests() -> dict:
+    if settings.demo_mode:
+        digest = demo_digest()
+        return {
+            "digests": [{
+                "id": digest["digest_id"],
+                "period_start": digest["period_start"],
+                "period_end": digest["period_end"],
+                "sent_at": None,
+                "channel": "demo",
+                "item_count": len(DEMO_DIGEST_ITEMS),
+            }]
+        }
+
     with SessionLocal() as db:
         rows = db.execute(
             select(Digest, func.count(DigestItem.id))
@@ -414,6 +567,18 @@ def list_digests() -> dict:
 def create_feedback(change_item_id: int, payload: FeedbackCreate) -> dict:
     if payload.label not in {"relevant", "not_relevant"}:
         raise HTTPException(status_code=422, detail="label must be 'relevant' or 'not_relevant'")
+
+    if settings.demo_mode:
+        item = next((entry for entry in DEMO_DIGEST_ITEMS if entry["change_item_id"] == change_item_id), None)
+        if item is None:
+            raise HTTPException(status_code=404, detail="Change item not found")
+        return {
+            "id": change_item_id,
+            "change_item_id": change_item_id,
+            "label": payload.label,
+            "user_id": payload.user_id,
+            "change_item_status": "shown" if payload.label == "relevant" else "dismissed",
+        }
 
     with SessionLocal() as db:
         change_item = db.get(ChangeItem, change_item_id)
@@ -451,6 +616,12 @@ def get_change_item_evidence(change_item_id: int) -> dict:
     tokens the diff engine surfaced, and screenshot references when present,
     so every digest claim is traceable to stored raw snapshots.
     """
+    if settings.demo_mode:
+        evidence = demo_evidence(change_item_id)
+        if not evidence:
+            raise HTTPException(status_code=404, detail="Change item not found")
+        return evidence
+
     with SessionLocal() as db:
         change_item = db.get(ChangeItem, change_item_id)
         if change_item is None:
@@ -518,6 +689,11 @@ def get_change_item_evidence(change_item_id: int) -> dict:
 
 @app.get("/change-items/{change_item_id}/feedback")
 def list_feedback(change_item_id: int) -> dict:
+    if settings.demo_mode:
+        if not any(entry["change_item_id"] == change_item_id for entry in DEMO_DIGEST_ITEMS):
+            raise HTTPException(status_code=404, detail="Change item not found")
+        return {"change_item_id": change_item_id, "change_item_status": "shown", "feedback": []}
+
     with SessionLocal() as db:
         change_item = db.get(ChangeItem, change_item_id)
         if change_item is None:
@@ -543,6 +719,25 @@ def list_feedback(change_item_id: int) -> dict:
 
 @app.get("/competitors/{competitor_id}/urgent-pricing")
 def get_urgent_pricing(competitor_id: int) -> dict:
+    if settings.demo_mode:
+        competitor = next((item for item in DEMO_COMPETITORS if item["id"] == competitor_id), None)
+        if competitor is None:
+            raise HTTPException(status_code=404, detail="Competitor not found")
+        item = next(
+            (entry for entry in DEMO_DIGEST_ITEMS if entry["competitor_name"] == competitor["name"] and entry["category"] == "pricing"),
+            None,
+        )
+        if item is None:
+            return {"urgent": False, "competitor_name": competitor["name"], "category": "pricing", "summary": "No pricing changes detected."}
+        return {
+            "urgent": True,
+            "competitor_name": competitor["name"],
+            "url": item["url"],
+            "category": item["category"],
+            "summary": item["summary"],
+            "confidence": item["confidence"],
+        }
+
     with SessionLocal() as db:
         competitor = db.get(Competitor, competitor_id)
         if competitor is None:
@@ -577,16 +772,37 @@ def get_urgent_pricing(competitor_id: int) -> dict:
 
 @app.get("/workers/status")
 def worker_status() -> dict:
+    if settings.demo_mode:
+        return {"running": False, "jobs": [], "mode": "demo"}
     return scheduler_status()
 
 
 @app.get("/workers/queue-status")
 def queue_status() -> dict:
+    if settings.demo_mode:
+        return {
+            "available": False,
+            "queue": settings.redis_queue_name,
+            "queued": 0,
+            "started": 0,
+            "failed": 0,
+            "jobs": [],
+            "message": "Queue is disabled in demo mode.",
+        }
     return get_queue_status()
 
 
 @app.post("/workers/run-cycle")
 def run_cycle(payload: dict | None = None) -> dict:
+    if settings.demo_mode:
+        return {
+            "processed_competitors": len(DEMO_COMPETITORS),
+            "material_changes": len(DEMO_DIGEST_ITEMS),
+            "alerts_sent": 0,
+            "last_alert": "Demo cycle complete. No websites were crawled and no data was persisted.",
+            "failed_fetches": [],
+        }
+
     candidate = payload or {}
     competitor_id = candidate.get("competitor_id")
     tracked_url_id = candidate.get("tracked_url_id")
@@ -602,6 +818,9 @@ def run_cycle(payload: dict | None = None) -> dict:
 
 @app.post("/workers/enqueue-cycle")
 def enqueue_cycle(payload: dict | None = None) -> dict:
+    if settings.demo_mode:
+        return {"queued": False, "reason": "Background queue is disabled in demo mode."}
+
     candidate = payload or {}
     return enqueue_monitoring_cycle(
         competitor_id=candidate.get("competitor_id"),

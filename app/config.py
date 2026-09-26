@@ -17,6 +17,8 @@ def _default_database_url() -> str:
 class Settings(BaseSettings):
     app_name: str = "competitive-intelligence-agent"
     environment: str = "development"
+    demo_mode: bool = False
+    api_only_mode: bool = False
     database_url: str = Field(default_factory=_default_database_url)
     redis_url: str = "redis://localhost:6379/0"
     redis_queue_name: str = "monitoring"

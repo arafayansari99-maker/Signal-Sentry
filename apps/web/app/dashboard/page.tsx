@@ -4,7 +4,7 @@ export default function DashboardPage() {
   return (
     <iframe
       className="monolith-frame"
-      src={`${monolithUrl}/dashboard`}
+      src={`${monolithUrl}/site/dashboard`}
       title="SignalSentry dashboard"
     />
   );

@@ -38,12 +38,16 @@ Add these environment variables for Production:
 APP_NAME=competitive-intelligence-agent
 ENVIRONMENT=production
 VERCEL=1
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://...
+DEMO_MODE=true
+API_ONLY_MODE=true
 REDIS_QUEUE_NAME=monitoring
 BACKGROUND_QUEUE_ENABLED=false
 ALLOWED_ORIGINS=https://your-frontend.vercel.app
 ```
+
+For this MVP deployment, do not add `DATABASE_URL` or `REDIS_URL`. With `DEMO_MODE=true`, the API skips database initialization, does not call Redis, and serves sample metrics, competitors, and digest content from in-memory demo fixtures. Dashboard actions return simulated responses only. In-memory changes are temporary and are not guaranteed to persist between serverless function instances.
+
+For a production deployment with persistent data and live monitoring, turn demo mode off and configure managed PostgreSQL and Redis instead.
 
 Add optional integrations only when configured:
 
@@ -63,9 +67,12 @@ SLACK_WEBHOOK_URL=
 Deploy, then verify:
 
 ```text
+https://your-api-domain.vercel.app/
 https://your-api-domain.vercel.app/health
 https://your-api-domain.vercel.app/docs
 https://your-api-domain.vercel.app/metrics/overview
+https://your-api-domain.vercel.app/site/landing
+https://your-api-domain.vercel.app/site/dashboard
 ```
 
 The health endpoint should return a JSON object with `status: ok`.
@@ -96,7 +103,7 @@ https://your-frontend.vercel.app/
 https://your-frontend.vercel.app/dashboard
 ```
 
-The frontend pages load the monolith-compatible landing and dashboard screens from the API URL, so the existing animations, menu behavior, dashboard actions, queue monitor, evidence panel, and exports remain available.
+The API root returns JSON service information. The frontend loads the landing and dashboard screens from `/site/landing` and `/site/dashboard`, preserving the existing animations, menu behavior, dashboard actions, queue monitor, evidence panel, and exports.
 
 ## 4. Configure CORS after the frontend URL exists
 

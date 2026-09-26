@@ -4,7 +4,7 @@ export default function Page() {
   return (
     <iframe
       className="monolith-frame"
-      src={`${monolithUrl}/`}
+      src={`${monolithUrl}/site/landing`}
       title="SignalSentry landing page"
     />
   );

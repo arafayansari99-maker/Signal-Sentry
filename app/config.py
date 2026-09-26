@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_queue_name: str = "monitoring"
     background_queue_enabled: bool = True
+    allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     sentry_dsn: str | None = None
     llm_api_key: str | None = None
     llm_model: str = "claude-3-5-sonnet"

@@ -38,3 +38,7 @@ uvicorn-*.log
 build/
 dist/
 *.egg-info/
+
+# Frontend dependencies and generated output
+apps/web/node_modules/
+apps/web/.next/

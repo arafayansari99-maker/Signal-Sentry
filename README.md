@@ -53,6 +53,15 @@ app/
   templates/
   workers/
 
+apps/
+  README.md
+  api/
+    README.md
+    .env.example
+  web/
+    README.md
+    .env.example
+
 scripts/
   seed_demo_data.py
 
@@ -71,6 +80,15 @@ README.md
 .env.example
 ```
 
+## Production split
+
+The app is now split into two services for local development and production deployment:
+
+- `apps/api` for FastAPI business logic, database access, exports, queue workers, and monitoring
+- `apps/web` for the public marketing site and dashboard frontend
+
+The frontend consumes live metrics, competitors, digests, monitoring-cycle actions, and export endpoints from the FastAPI backend. This separates UI concerns from backend services and allows each service to scale and deploy independently.
+
 ## Local setup
 
 ```bash
@@ -81,11 +99,19 @@ copy .env.example .env
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
+In a second terminal, start the frontend:
+
+```bash
+cd apps/web
+npm install
+npm run dev
+```
+
 Then open:
 
-- http://localhost:8001/
-- http://localhost:8001/dashboard
-- http://localhost:8001/docs
+- http://localhost:3000/ for the frontend landing page
+- http://localhost:3000/dashboard for the API-driven dashboard
+- http://localhost:8001/docs for backend API documentation
 
 ## Configuration
 

@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,19 +47,35 @@ from app.queue import enqueue_monitoring_cycle, get_queue_status
 settings = get_settings()
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
-frontend_origin = settings.frontend_url.strip().rstrip("/")
-if not frontend_origin:
-    frontend_origin = next(
-        (
-            origin.strip().rstrip("/")
-            for origin in settings.allowed_origins.split(",")
-            if origin.strip().startswith("https://")
-        ),
-        "",
-    )
+
+
+def get_dashboard_url(request: Request) -> str:
+    allowed_origins = {
+        origin.strip().rstrip("/")
+        for origin in settings.allowed_origins.split(",")
+        if origin.strip()
+    }
+    referer = request.headers.get("referer", "")
+    if referer:
+        parsed_referer = urlparse(referer)
+        referer_origin = f"{parsed_referer.scheme}://{parsed_referer.netloc}".rstrip("/")
+        if referer_origin in allowed_origins:
+            return f"{referer_origin}/dashboard"
+
+    frontend_origin = settings.frontend_url.strip().rstrip("/")
+    if not frontend_origin:
+        frontend_origin = next(
+            (origin for origin in allowed_origins if origin.startswith("https://")),
+            "",
+        )
+    if frontend_origin:
+        return f"{frontend_origin}/dashboard"
+    return "/site/dashboard" if os.getenv("VERCEL") else "/dashboard"
+
+
 templates.env.globals["dashboard_url"] = (
-    f"{frontend_origin}/dashboard"
-    if frontend_origin
+    f"{settings.frontend_url.strip().rstrip('/')}/dashboard"
+    if settings.frontend_url.strip()
     else "/site/dashboard" if os.getenv("VERCEL") else "/dashboard"
 )
 
@@ -119,7 +136,11 @@ def landing_page(request: Request) -> Response:
                 "health": "/health",
             }
         )
-    return templates.TemplateResponse(request=request, name="landing.html")
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={"dashboard_url": get_dashboard_url(request)},
+    )
 
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -131,7 +152,11 @@ def dashboard_page(request: Request) -> Response:
 
 @app.get("/site/landing", response_class=HTMLResponse)
 def site_landing_page(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(request=request, name="landing.html")
+    return templates.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={"dashboard_url": get_dashboard_url(request)},
+    )
 
 
 @app.get("/site/dashboard", response_class=HTMLResponse)

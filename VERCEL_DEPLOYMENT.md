@@ -40,6 +40,7 @@ ENVIRONMENT=production
 VERCEL=1
 DEMO_MODE=true
 API_ONLY_MODE=true
+FRONTEND_URL=https://your-frontend.vercel.app
 REDIS_QUEUE_NAME=monitoring
 BACKGROUND_QUEUE_ENABLED=false
 ALLOWED_ORIGINS=https://your-frontend.vercel.app
@@ -95,6 +96,8 @@ Set this Production environment variable:
 ```env
 NEXT_PUBLIC_API_URL=https://your-api-domain.vercel.app
 ```
+
+The frontend build requires `NEXT_PUBLIC_API_URL`; Vercel builds fail with a direct configuration error rather than shipping pages whose iframe points at localhost. The API uses `FRONTEND_URL` to send Dashboard links from its embedded landing page to the frontend project.
 
 Deploy and open:
 

@@ -46,6 +46,11 @@ from app.queue import enqueue_monitoring_cycle, get_queue_status
 settings = get_settings()
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+templates.env.globals["dashboard_url"] = (
+    f"{settings.frontend_url.rstrip('/')}/dashboard"
+    if settings.frontend_url.strip()
+    else "/dashboard"
+)
 
 
 @asynccontextmanager
@@ -95,7 +100,7 @@ else:
 
 @app.get("/", response_class=HTMLResponse)
 def landing_page(request: Request) -> Response:
-    if settings.api_only_mode:
+    if settings.api_only_mode or os.getenv("VERCEL"):
         return JSONResponse(
             {
                 "service": settings.app_name,
@@ -109,7 +114,7 @@ def landing_page(request: Request) -> Response:
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard_page(request: Request) -> Response:
-    if settings.api_only_mode:
+    if settings.api_only_mode or os.getenv("VERCEL"):
         return JSONResponse({"message": "The dashboard UI is served by the frontend project."})
     return templates.TemplateResponse(request=request, name="dashboard.html", context={})
 

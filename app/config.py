@@ -1,12 +1,23 @@
+import os
+import tempfile
 from functools import lru_cache
+from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _default_database_url() -> str:
+    if os.getenv("VERCEL"):
+        database_path = Path(tempfile.gettempdir()) / "competitive_intelligence.db"
+        return f"sqlite:///{database_path.as_posix()}"
+    return "sqlite:///./competitive_intelligence.db"
 
 
 class Settings(BaseSettings):
     app_name: str = "competitive-intelligence-agent"
     environment: str = "development"
-    database_url: str = "sqlite:///./competitive_intelligence.db"
+    database_url: str = Field(default_factory=_default_database_url)
     redis_url: str = "redis://localhost:6379/0"
     redis_queue_name: str = "monitoring"
     background_queue_enabled: bool = True

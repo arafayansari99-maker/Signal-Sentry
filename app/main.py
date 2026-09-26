@@ -46,10 +46,20 @@ from app.queue import enqueue_monitoring_cycle, get_queue_status
 settings = get_settings()
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+frontend_origin = settings.frontend_url.strip().rstrip("/")
+if not frontend_origin:
+    frontend_origin = next(
+        (
+            origin.strip().rstrip("/")
+            for origin in settings.allowed_origins.split(",")
+            if origin.strip().startswith("https://")
+        ),
+        "",
+    )
 templates.env.globals["dashboard_url"] = (
-    f"{settings.frontend_url.rstrip('/')}/dashboard"
-    if settings.frontend_url.strip()
-    else "/dashboard"
+    f"{frontend_origin}/dashboard"
+    if frontend_origin
+    else "/site/dashboard" if os.getenv("VERCEL") else "/dashboard"
 )
 
 

@@ -42,3 +42,5 @@ dist/
 # Frontend dependencies and generated output
 apps/web/node_modules/
 apps/web/.next/
+apps/web/.next-dev/
+*.tsbuildinfo

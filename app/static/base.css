@@ -120,6 +120,10 @@ img { max-width: 100%; display: block; }
   display: contents;
 }
 
+.mobile-nav-actions {
+  display: none;
+}
+
 .mobile-nav-toggle {
   display: none;
   flex-direction: column;

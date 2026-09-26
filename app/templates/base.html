@@ -83,7 +83,7 @@
 
         if (actionHost && mobileActions && !mobileActions.innerHTML.trim()) {
           const actionMarkup = actionHost.innerHTML.trim();
-          if (actionMarkup && !actionMarkup.includes('href="/dashboard"')) {
+          if (actionMarkup) {
             mobileActions.innerHTML = actionMarkup;
           }
           renderProfilePill();

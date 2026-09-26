@@ -1,0 +1,10 @@
+apps/web/node_modules
+apps/web/.next
+.venv
+.env
+*.db
+*.sqlite3
+.freebuff
+.pytest_cache
+__pycache__
+tests

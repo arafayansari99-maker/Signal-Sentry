@@ -334,7 +334,7 @@ img { max-width: 100%; display: block; }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     overflow: visible;
     z-index: 40;
   }
@@ -360,14 +360,14 @@ img { max-width: 100%; display: block; }
   }
 
   .mobile-nav-panel {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
-    left: auto;
-    width: min(280px, calc(100vw - 28px));
+    position: relative;
+    order: 3;
+    flex: 0 0 100%;
+    width: 100%;
     display: none;
     flex-direction: column;
     gap: 12px;
+    margin-top: 12px;
     padding: 14px;
     border: 1px solid rgba(95, 224, 255, 0.28);
     border-radius: 22px;
@@ -402,6 +402,19 @@ img { max-width: 100%; display: block; }
     text-align: center;
   }
 
+  .shell .mobile-nav-panel .nav a:hover,
+  .shell .mobile-nav-panel .nav a:focus-visible,
+  .shell .mobile-nav-panel .nav a[aria-current="page"],
+  .app-shell .mobile-nav-panel .nav a:hover,
+  .app-shell .mobile-nav-panel .nav a:focus-visible,
+  .app-shell .mobile-nav-panel .nav a[aria-current="page"] {
+    color: var(--text);
+    background: linear-gradient(135deg, rgba(95, 224, 255, 0.16), rgba(141, 139, 255, 0.12));
+    border: 1px solid rgba(95, 224, 255, 0.28);
+    box-shadow: 0 8px 18px rgba(5, 14, 24, 0.28), inset 0 0 0 1px rgba(95, 224, 255, 0.08);
+    transform: translateX(3px);
+  }
+
   .mobile-nav-actions {
     display: flex;
     justify-content: center;
@@ -425,8 +438,14 @@ img { max-width: 100%; display: block; }
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     border-radius: 24px;
     padding: 14px 16px;
+  }
+
+  .shell .topbar,
+  .app-shell .topbar {
+    flex-wrap: wrap;
   }
 
   .brand {

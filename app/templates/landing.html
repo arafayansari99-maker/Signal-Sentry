@@ -9,6 +9,7 @@
     scroll-behavior: smooth;
     color-scheme: dark;
     scroll-padding-top: 110px;
+    overflow-x: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
     background: #040d14;
@@ -862,6 +863,10 @@
   }
 
   @media (max-width: 900px) {
+    .shell {
+      overflow: visible;
+    }
+
     .hero,
     .feature-rail,
     .step-grid,
@@ -869,31 +874,49 @@
       grid-template-columns: 1fr;
     }
 
-    .topbar {
-      flex-wrap: wrap;
-      justify-content: center;
+    .shell .topbar {
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      z-index: 200;
     }
 
-    .nav {
+    .shell .nav {
       width: 100%;
+      flex-direction: column;
       justify-content: center;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .shell .nav a {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      text-align: center;
     }
   }
 
   @media (max-width: 640px) {
     .shell {
+      width: 100%;
+      max-width: 100%;
       padding: 16px 14px 60px;
+      overflow-x: clip;
     }
 
-    .topbar {
-      flex-direction: column;
-      align-items: stretch;
+    .shell .topbar {
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      z-index: 200;
       border-radius: 24px;
       padding: 14px 16px;
     }
 
-    .nav {
+    .shell .nav {
       width: 100%;
       justify-content: center;
       gap: 6px;
@@ -915,6 +938,12 @@
 
     .hero {
       gap: 18px;
+    }
+
+    .dashboard-window {
+      width: 100%;
+      max-width: 100%;
+      transform: perspective(900px) rotateX(5deg) rotateY(0deg);
     }
 
     .hero h1 {
@@ -949,6 +978,7 @@
 <a href="#product">Product</a>
 <a href="#signals">Signals</a>
 <a href="#pricing">Pricing</a>
+<a href="/dashboard">Dashboard</a>
 {% endblock %}
 
 {% block top_actions %}

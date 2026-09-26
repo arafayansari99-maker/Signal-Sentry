@@ -1,6 +1,6 @@
 # Signal-Sentry
 
-Signal-Sentry is an open competitive intelligence dashboard for tracking competitor pricing, product changes, and market signals in one place.
+Signal-Sentry is an open competitive intelligence platform that turns competitor pricing, product changes, and market activity into clear, actionable signals.
 
 The app combines a public landing page, a live dashboard, and background monitoring workflows to surface important changes across competitor websites without requiring a company-auth flow.
 

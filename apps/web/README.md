@@ -47,3 +47,15 @@ NEXT_PUBLIC_APP_NAME=Signal-Sentry
 - Consume the API over HTTP rather than importing Python modules.
 - Use environment variables for API host configuration.
 - Keep all business logic in the backend API service.
+
+## Vercel deployment
+
+Deploy this directory as its own Vercel project:
+
+- Root directory: `apps/web`
+- Framework: Next.js
+- Build command: `npm run build`
+- Install command: `npm install`
+- Environment variable: `NEXT_PUBLIC_API_URL=https://your-api-domain.vercel.app`
+
+The API is deployed separately from the repository root. See [../../VERCEL_DEPLOYMENT.md](../../VERCEL_DEPLOYMENT.md) for the complete production guide.
